@@ -1,6 +1,11 @@
 """
 Facebook Page-Page Dataset available here on Rangpur:
 /home/groups/comp3710
+
+The GCN uses transductive semi-supervised learning so it learns 
+from the labels of some nodes while using the features and 
+connections of all nodes, including those whose labels are 
+withheld during training.
 """
 import torch
 from torch_geometric.datasets import FacebookPagePage
