@@ -5,3 +5,6 @@ data/
 __pycache__/
 *.pyc
 
+# Ignore saved model files
+*.pt
+
