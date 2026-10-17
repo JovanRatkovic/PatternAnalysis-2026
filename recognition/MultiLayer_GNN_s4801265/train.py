@@ -5,11 +5,19 @@ from torch import nn
 from dataset import load_dataset
 from modules import MLP
 
+import csv
+
+from sklearn.metrics import (
+    accuracy_score,
+    precision_recall_fscore_support,
+    roc_auc_score,
+    confusion_matrix
+)
 
 # Training settings
 SEED = 42
 LEARNING_RATE = 0.01
-EPOCHS = 1000
+EPOCHS = 500
 DROPOUT = 0.5
 HIDDEN_DIM = 32
 
@@ -56,6 +64,113 @@ def evaluate(model, data, mask, criterion):
         ).float().mean().item()
 
     return loss.item(), accuracy
+
+
+def evaluate_test_set(model, data):
+    model.eval()
+
+    with torch.no_grad():
+        # Generate predictions for all nodes
+        output = model(data.x)
+
+        # Select only test nodes
+        test_output = output[data.test_mask]
+        test_labels = data.y[data.test_mask]
+
+        # Convert logits into class probabilities
+        probabilities = torch.softmax(test_output, dim=1)
+
+        # Find the predicted class for each node
+        predictions = probabilities.argmax(dim=1)
+
+    # Move results to CPU for evaluation
+    labels = test_labels.cpu().numpy()
+    predictions = predictions.cpu().numpy()
+    probabilities = probabilities.cpu().numpy()
+
+    # Get original node indices
+    node_indices = data.test_mask.nonzero(
+        as_tuple=True
+    )[0].cpu().numpy()
+
+    # Calculate classification metrics
+    accuracy = accuracy_score(labels, predictions)
+
+    precision, recall, f1, support = (
+        precision_recall_fscore_support(
+            labels,
+            predictions,
+            labels=[0, 1, 2, 3],
+            zero_division=0
+        )
+    )
+
+    macro_f1 = f1.mean()
+
+    # Calculate multiclass AUROC
+    auroc = roc_auc_score(
+        labels,
+        probabilities,
+        labels=[0, 1, 2, 3],
+        multi_class="ovr",
+        average="macro"
+    )
+
+    # Calculate confusion matrix
+    matrix = confusion_matrix(
+        labels,
+        predictions,
+        labels=[0, 1, 2, 3]
+    )
+
+    # Print results
+    print("\n=== FINAL MLP TEST RESULTS ===")
+    print(f"Test Accuracy: {accuracy:.4f}")
+    print(f"Macro-F1: {macro_f1:.4f}")
+    print(f"Macro AUROC (OvR): {auroc:.4f}")
+
+    print("\nPer-Class Results:")
+
+    for class_id in range(4):
+        print(
+            f"Class {class_id}: "
+            f"Precision={precision[class_id]:.4f}, "
+            f"Recall={recall[class_id]:.4f}, "
+            f"F1={f1[class_id]:.4f}, "
+            f"Support={support[class_id]}"
+        )
+
+    print("\nConfusion Matrix:")
+    print(matrix)
+
+    # Save individual test predictions and probabilities
+    with open("mlp_predictions.csv", "w", newline="") as file:
+        writer = csv.writer(file)
+
+        writer.writerow([
+            "node_id",
+            "true_label",
+            "predicted_label",
+            "confidence",
+            "prob_class_0",
+            "prob_class_1",
+            "prob_class_2",
+            "prob_class_3"
+        ])
+
+        for node_id, label, prediction, probs in zip(
+            node_indices, labels, predictions, probabilities
+        ):
+            writer.writerow([
+                int(node_id),
+                int(label),
+                int(prediction),
+                float(probs.max()),
+                *[float(p) for p in probs]
+            ])
+
+    print("\nMLP predictions saved to mlp_predictions.csv")
+
 
 
 def main():
@@ -158,7 +273,8 @@ def main():
     print(f"Validation Loss: {val_loss:.4f}")
     print(f"Validation Accuracy: {val_accuracy:.4f}")
 
-
+    # Evaluate the best saved model on the test set
+    evaluate_test_set(model, data)
 
 if __name__ == "__main__":
     main()

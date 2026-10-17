@@ -8,3 +8,6 @@ __pycache__/
 # Ignore saved model files
 *.pt
 
+# Ignore data files
+*.csv
+
