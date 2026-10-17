@@ -11,3 +11,6 @@ __pycache__/
 # Ignore data files
 *.csv
 
+# Ignore png files
+*.png
+
