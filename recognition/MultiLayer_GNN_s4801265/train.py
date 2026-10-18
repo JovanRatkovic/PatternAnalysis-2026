@@ -11,6 +11,8 @@ import time
 
 import argparse
 
+import numpy as np
+from sklearn.manifold import TSNE
 from sklearn.metrics import (
     accuracy_score,
     precision_recall_fscore_support,
@@ -241,6 +243,243 @@ def plot_training_results(training_losses, validation_losses,
     plt.close()
 
     print("\nTraining plots saved successfully.")
+
+
+def plot_analysis_results(model, data, model_name, threshold):
+    """
+    Plot classification, confidence and embedding results.
+
+    Args:
+        model: Best trained MLP or GCN.
+        data: Graph containing features, labels and masks.
+        model_name: "mlp" or "gcn".
+        threshold: Confidence threshold selected on validation data.
+
+    Returns:
+        None
+    """
+    model.eval()
+
+    with torch.no_grad():
+        output = model_forward(model, data)
+
+        test_output = output[data.test_mask]
+        labels = data.y[data.test_mask]
+
+        probabilities = torch.softmax(test_output, dim=1)
+        confidences, predictions = probabilities.max(dim=1)
+
+        correct = predictions == labels
+
+    # Move values to CPU for plotting
+    labels_np = labels.cpu().numpy()
+    predictions_np = predictions.cpu().numpy()
+    confidences_np = confidences.cpu().numpy()
+    correct_np = correct.cpu().numpy()
+
+    class_names = ["Class 0", "Class 1", "Class 2", "Class 3"]
+
+    # Confusion matrix
+    matrix = confusion_matrix(
+        labels_np, predictions_np, labels=[0, 1, 2, 3]
+    )
+
+    plt.figure(figsize=(7, 6))
+    plt.imshow(matrix, cmap="Blues")
+    plt.colorbar(label="Number of Nodes")
+
+    plt.xticks(range(4), class_names)
+    plt.yticks(range(4), class_names)
+
+    for i in range(4):
+        for j in range(4):
+            plt.text(
+                j, i, str(matrix[i, j]),
+                ha="center", va="center",
+                color="white" if matrix[i, j] > matrix.max() / 2 else "black"
+            )
+
+    plt.xlabel("Predicted Class")
+    plt.ylabel("Actual Class")
+    plt.title(f"{model_name.upper()} Confusion Matrix")
+    plt.tight_layout()
+    plt.savefig(f"{model_name}_confusion_matrix.png", dpi=200)
+    plt.close()
+
+    # Reliability diagram
+    bin_confidences = []
+    bin_accuracies = []
+
+    for i in range(10):
+        lower = i / 10
+        upper = (i + 1) / 10
+
+        if i == 9:
+            mask = (confidences_np >= lower) & (confidences_np <= upper)
+        else:
+            mask = (confidences_np >= lower) & (confidences_np < upper)
+
+        if mask.any():
+            bin_confidences.append(confidences_np[mask].mean())
+            bin_accuracies.append(correct_np[mask].mean())
+
+    plt.figure(figsize=(7, 6))
+
+    plt.plot(
+        [0, 1], [0, 1], "k--",
+        label="Perfect Calibration"
+    )
+
+    plt.plot(
+        bin_confidences, bin_accuracies,
+        "o-", label=model_name.upper()
+    )
+
+    plt.xlabel("Average Confidence")
+    plt.ylabel("Actual Accuracy")
+    plt.title(f"{model_name.upper()} Reliability Diagram")
+    plt.xlim(0, 1)
+    plt.ylim(0, 1)
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+
+    plt.savefig(f"{model_name}_reliability.png", dpi=200)
+    plt.close()
+
+    # Correct vs incorrect confidence distribution
+    plt.figure(figsize=(8, 5))
+
+    bins = np.linspace(0, 1, 21)
+
+    plt.hist(
+        confidences_np[correct_np],
+        bins=bins,
+        alpha=0.6,
+        density=True,
+        label="Correct Predictions"
+    )
+
+    plt.hist(
+        confidences_np[~correct_np],
+        bins=bins,
+        alpha=0.6,
+        density=True,
+        label="Incorrect Predictions"
+    )
+
+    plt.xlabel("Prediction Confidence")
+    plt.ylabel("Probability Density")
+    plt.title(f"{model_name.upper()} Confidence Distribution")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+
+    plt.savefig(f"{model_name}_confidence.png", dpi=200)
+    plt.close()
+
+    # Accuracy vs manual-review workload
+    review_percentages = []
+    accepted_accuracies = []
+
+    for current_threshold in np.linspace(0, 0.99, 100):
+        accepted = confidences_np >= current_threshold
+
+        if accepted.sum() == 0:
+            continue
+
+        accepted_accuracy = correct_np[accepted].mean() * 100
+        review_percentage = (~accepted).mean() * 100
+
+        review_percentages.append(review_percentage)
+        accepted_accuracies.append(accepted_accuracy)
+
+    plt.figure(figsize=(8, 5))
+
+    plt.plot(
+        review_percentages,
+        accepted_accuracies,
+        label="Accuracy vs Workload"
+    )
+
+    # Mark the threshold selected using validation data
+    if threshold is not None:
+        accepted = confidences_np >= threshold
+
+        if accepted.any():
+            plt.scatter(
+                (~accepted).mean() * 100,
+                correct_np[accepted].mean() * 100,
+                label=f"Selected Threshold: {threshold:.2f}",
+                s=80,
+                zorder=5
+            )
+
+    plt.xlabel("Nodes Sent for Manual Review (%)")
+    plt.ylabel("Accepted Prediction Accuracy (%)")
+    plt.title(f"{model_name.upper()} Manual Review Trade-off")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+
+    plt.savefig(f"{model_name}_manual_review.png", dpi=200)
+    plt.close()
+
+    # GCN learned embeddings using t-SNE
+    if model_name == "gcn":
+        with torch.no_grad():
+            embeddings = model.get_embeddings(
+                data.x, data.edge_index
+            )
+
+        embeddings = embeddings.cpu().numpy()
+        all_labels = data.y.cpu().numpy()
+
+        # Sample 4000 nodes for faster t-SNE
+        rng = np.random.default_rng(42)
+        indices = rng.choice(
+            len(all_labels),
+            size=min(4000, len(all_labels)),
+            replace=False
+        )
+
+        embeddings = embeddings[indices]
+        sampled_labels = all_labels[indices]
+
+        tsne = TSNE(
+            n_components=2,
+            perplexity=30,
+            random_state=42,
+            init="pca",
+            learning_rate="auto"
+        )
+
+        reduced = tsne.fit_transform(embeddings)
+
+        plt.figure(figsize=(9, 7))
+
+        for class_id in range(4):
+            mask = sampled_labels == class_id
+
+            plt.scatter(
+                reduced[mask, 0],
+                reduced[mask, 1],
+                s=8,
+                alpha=0.6,
+                label=class_names[class_id]
+            )
+
+        plt.xlabel("t-SNE Dimension 1")
+        plt.ylabel("t-SNE Dimension 2")
+        plt.title("GCN Learned Node Embeddings")
+        plt.legend()
+        plt.grid(True, alpha=0.2)
+        plt.tight_layout()
+
+        plt.savefig("gcn_tsne.png", dpi=200)
+        plt.close()
+
+    print(f"\n{model_name.upper()} analysis plots saved successfully.")
 
 
 
@@ -718,7 +957,13 @@ def main():
     # Investigate confidently incorrect predictions
     analyse_failures(model, data, num_examples=5)
 
-
+    # Plot classification, confidence and embedding results
+    plot_analysis_results(
+        model,
+        data,
+        model_name,
+        threshold
+    )
 
 if __name__ == "__main__":
     main()

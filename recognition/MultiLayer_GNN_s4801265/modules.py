@@ -92,3 +92,19 @@ class GCN(nn.Module):
         x = self.conv2(x, edge_index)
 
         return x
+
+    def get_embeddings(self, x, edge_index):
+        """
+        Return the learned hidden node representations.
+
+        Args:
+            x: Node features [num_nodes, input_dim].
+            edge_index: Graph connections [2, num_edges].
+
+        Returns:
+            Hidden node embeddings [num_nodes, hidden_dim].
+        """
+        x = self.conv1(x, edge_index)
+        x = self.relu(x)
+
+        return x
