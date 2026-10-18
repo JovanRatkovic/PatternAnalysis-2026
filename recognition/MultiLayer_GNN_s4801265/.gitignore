@@ -14,3 +14,4 @@ __pycache__/
 # Ignore png files
 *.png
 
+.vscode/

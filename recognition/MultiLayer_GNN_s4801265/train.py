@@ -3,12 +3,13 @@ import torch
 from torch import nn
 
 from dataset import load_dataset
-from modules import MLP
+from modules import MLP, GCN
 
 import matplotlib.pyplot as plt
 import csv
-
 import time
+
+import argparse
 
 from sklearn.metrics import (
     accuracy_score,
@@ -24,6 +25,21 @@ EPOCHS = 500
 DROPOUT = 0.5
 HIDDEN_DIM = 32
 
+def model_forward(model, data):
+    """
+    Perform a forward pass using the selected model.
+
+    Args:
+        model: MLP or GCN model.
+        data: Graph containing node features and connections.
+
+    Returns:
+        Class logits for all nodes.
+    """
+    if isinstance(model, GCN):
+        return model(data.x, data.edge_index)
+
+    return model(data.x)
 
 def train_epoch(model, data, optimizer, criterion):
     model.train()
@@ -32,7 +48,7 @@ def train_epoch(model, data, optimizer, criterion):
     optimizer.zero_grad()
 
     # Predict classes for all nodes
-    output = model(data.x)
+    output = model_forward(model, data)
 
     # Calculate loss using training labels only
     loss = criterion(
@@ -53,7 +69,7 @@ def evaluate(model, data, mask, criterion):
     model.eval()
 
     with torch.no_grad():
-        output = model(data.x)
+        output = model_forward(model, data)
 
         loss = criterion(
             output[mask],
@@ -69,12 +85,12 @@ def evaluate(model, data, mask, criterion):
     return loss.item(), accuracy
 
 
-def evaluate_test_set(model, data):
+def evaluate_test_set(model, data, model_name):
     model.eval()
 
     with torch.no_grad():
         # Generate predictions for all nodes
-        output = model(data.x)
+        output = model_forward(model, data)
 
         # Select only test nodes
         test_output = output[data.test_mask]
@@ -127,7 +143,7 @@ def evaluate_test_set(model, data):
     )
 
     # Print results
-    print("\n=== FINAL MLP TEST RESULTS ===")
+    print(f"\n=== FINAL {model_name.upper()} TEST RESULTS ===")
     print(f"Test Accuracy: {accuracy:.4f}")
     print(f"Macro-F1: {macro_f1:.4f}")
     print(f"Macro AUROC (OvR): {auroc:.4f}")
@@ -147,7 +163,7 @@ def evaluate_test_set(model, data):
     print(matrix)
 
     # Save individual test predictions and probabilities
-    with open("mlp_predictions.csv", "w", newline="") as file:
+    with open(f"{model_name}_predictions.csv", "w", newline="") as file:
         writer = csv.writer(file)
 
         writer.writerow([
@@ -172,11 +188,12 @@ def evaluate_test_set(model, data):
                 *[float(p) for p in probs]
             ])
 
-    print("\nMLP predictions saved to mlp_predictions.csv")
+    print(f"\nPredictions saved to {model_name}_predictions.csv")
 
 
 def plot_training_results(training_losses, validation_losses,
-                          training_accuracies, validation_accuracies):
+                          training_accuracies, validation_accuracies,
+                          model_name):
     """
     Plot and save training and validation results.
 
@@ -199,12 +216,12 @@ def plot_training_results(training_losses, validation_losses,
 
     plt.xlabel("Epoch")
     plt.ylabel("Cross-Entropy Loss")
-    plt.title("MLP Training and Validation Loss")
+    plt.title(f"{model_name.upper()} Training and Validation Loss")
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
 
-    plt.savefig("mlp_loss.png", dpi=200)
+    plt.savefig(f"{model_name}_loss.png", dpi=200)
     plt.close()
 
     # Plot training and validation accuracy
@@ -215,12 +232,12 @@ def plot_training_results(training_losses, validation_losses,
 
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy")
-    plt.title("MLP Training and Validation Accuracy")
+    plt.title(f"{model_name.upper()} Training and Validation Accuracy")
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
 
-    plt.savefig("mlp_accuracy.png", dpi=200)
+    plt.savefig(f"{model_name}_accuracy.png", dpi=200)
     plt.close()
 
     print("\nTraining plots saved successfully.")
@@ -283,7 +300,7 @@ def select_confidence_threshold(
     model.eval()
 
     with torch.no_grad():
-        output = model(data.x)
+        output = model_forward(model, data)
         probabilities = torch.softmax(
             output[data.val_mask], dim=1
         )
@@ -340,7 +357,7 @@ def analyse_confidence(model, data, mask, threshold, split_name):
     model.eval()
 
     with torch.no_grad():
-        output = model(data.x)
+        output = model_forward(model, data)
 
         probabilities = torch.softmax(
             output[mask], dim=1
@@ -425,7 +442,7 @@ def measure_resources(model, data, device):
     # Warm up before timing
     with torch.inference_mode():
         for _ in range(5):
-            model(data.x)
+            model_forward(model, data)
 
     # Synchronise GPU operations before timing
     if device.type == "cuda":
@@ -442,7 +459,7 @@ def measure_resources(model, data, device):
 
             start_time = time.perf_counter()
 
-            output = model(data.x)
+            output = model_forward(model, data)
             test_output = output[data.test_mask]
 
             # Ensure GPU operations have completed
@@ -481,7 +498,7 @@ def analyse_failures(model, data, num_examples=5):
     model.eval()
 
     with torch.no_grad():
-        output = model(data.x)
+        output = model_forward(model, data)
         probabilities = torch.softmax(output, dim=1)
 
         confidences, predictions = probabilities.max(dim=1)
@@ -523,6 +540,18 @@ def analyse_failures(model, data, num_examples=5):
 
 
 def main():
+
+    # Select which model to train
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--model",
+        choices=["mlp", "gcn"],
+        default="mlp"
+    )
+
+    args = parser.parse_args()
+    model_name = args.model
+
     # Set random seed for reproducibility
     torch.manual_seed(SEED)
 
@@ -536,13 +565,26 @@ def main():
     # Load the dataset and transfer it to the device
     data = load_dataset(seed=SEED).to(device)
 
-    # Initialise the MLP baseline
-    model = MLP(
-        input_dim=128,
-        hidden_dim=HIDDEN_DIM,
-        output_dim=4,
-        dropout=DROPOUT
-    ).to(device)
+    # Initialise the selected model
+    if model_name == "mlp":
+        model = MLP(
+            input_dim=128,
+            hidden_dim=HIDDEN_DIM,
+            output_dim=4,
+            dropout=DROPOUT
+        ).to(device)
+
+        epochs = 500
+
+    else:
+        model = GCN(
+            input_dim=128,
+            hidden_dim=HIDDEN_DIM,
+            output_dim=4,
+            dropout=DROPOUT
+        ).to(device)
+
+        epochs = 200
 
     # Define the loss function
     criterion = nn.CrossEntropyLoss()
@@ -553,11 +595,11 @@ def main():
         lr=LEARNING_RATE
     )
 
-    print("MLP initialised successfully.")
+    print(f"{model_name.upper()} initialised successfully.")
 
     best_val_loss = float("inf")
     best_epoch = 0
-    best_model_path = "mlp_best.pt"
+    best_model_path = f"{model_name}_best.pt"
 
     training_losses = []
     validation_losses = []
@@ -566,7 +608,7 @@ def main():
     validation_accuracies = []
 
     # Train the MLP baseline
-    for epoch in range(1, EPOCHS + 1):
+    for epoch in range(1, epochs + 1):
 
         # Train the MLP for one epoch
         train_epoch(model, data, optimizer, criterion)
@@ -622,7 +664,7 @@ def main():
 
     model.eval()
 
-    print("\nBest MLP model loaded.")
+    print(f"\nBest {model_name.upper()} model loaded.")
 
     # Evaluate the best saved model on training nodes
     train_loss, train_accuracy = evaluate(
@@ -634,7 +676,7 @@ def main():
         model, data, data.val_mask, criterion
     )
 
-    print("\n=== BEST MLP MODEL RESULTS ===")
+    print(f"\n=== BEST {model_name.upper()} MODEL RESULTS ===")
     print(f"Best Epoch: {best_epoch}")
     print(f"Training Loss: {train_loss:.4f}")
     print(f"Training Accuracy: {train_accuracy:.4f}")
@@ -647,7 +689,8 @@ def main():
         training_losses,
         validation_losses,
         training_accuracies,
-        validation_accuracies
+        validation_accuracies,
+        model_name
     )
 
     # Select a confidence threshold using validation data
@@ -661,7 +704,7 @@ def main():
     measure_resources(model, data, device)
 
     # Final test-set classification evaluation
-    evaluate_test_set(model, data)
+    evaluate_test_set(model, data, model_name)
 
     # Analyse test-set confidence and manual-review performance
     analyse_confidence(
@@ -672,7 +715,7 @@ def main():
         "Test"
     )
 
-    # Investigate three confidently incorrect predictions
+    # Investigate confidently incorrect predictions
     analyse_failures(model, data, num_examples=5)
 
 
