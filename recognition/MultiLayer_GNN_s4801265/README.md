@@ -34,7 +34,7 @@ Due to issues in the PyTorch Geometric dataset, the Facebook Page-Page dataset
 was obtained from this link:
 
 https://github.com/gayanku/facebook_page-page_dataset/tree/main
-
+```
 The libraries and their version used for this project are:
 - Python              3.10.12
 - PyTorch:            2.14.1+cu130
@@ -43,7 +43,7 @@ The libraries and their version used for this project are:
 - scikit-learn:       1.7.2
 - Matplotlib:         3.10.9
 - CUDA:               13.0
-
+```
 The project also uses standard Python libraries including argparse, csv and time. 
 These are included with Python and do not require separate installation.
 
@@ -109,6 +109,7 @@ From this link the dataset is given by the file: facebook.npz
 ## Running Training and Inference
 The training script can train both the MLP baseline and the two-layer GCN separately
 using the --model argument.
+
 To train the MLP:
 ```bash
 python train.py --model mlp
@@ -118,21 +119,119 @@ To train the GCN:
 python train.py --model gcn
 ```
 
-To run the inference of a model do...
+To run the inference of a model do
+
+...
 
 # Dataset and Preprocessing
-
 ## Facebook Page-Page Network Dataset
+This project uses the Facebook Large Page-Page Network dataset, which was collected
+through the Facebook Graph API in November 2017. The dataset represents a network of
+verified Facebook pages, where nodes represent official Facebook pages and edges 
+represent mutual likes between pages [2].
+
+The dataset contains four categories of Facebook pages: politicians, governmental
+organisations, television shows and companies [2]. These categories were defined by 
+Facebook, and the objective of this project is to classify each page into one of 
+the four categories using its features and graph connections.
+
+The dataset is available through PyTorch Geometric and was originally provided in 
+a NumPy .npz file. The original data required conversion into the format expected 
+by the PyTorch Geometric FacebookPagePage loader. This involved extracting the 
+node features, edge connections and class labels, and saving them using the 
+appropriate array names.
 
 ## Node Features, Graph Connections and Class Labels
+Each Facebook page is represented by 128-dimensional node features extracted from
+descriptions written by the page owners to summarise the purpose of their pages. 
+These features provide information about individual Facebook pages and are used 
+by both the MLP and GCN during classification.
+
+The graph connections represent mutual likes between Facebook pages. As these 
+connections are undirected, the 171,002 edges are stored as 342,004 directed 
+edge entries in PyTorch Geometric, representing connections in both directions. 
+The dataset does not contain any edge features [3].
+
+Each node has a class label represented by an integer from 0 to 3, corresponding 
+to one of the four Facebook page categories. The feature matrix has dimensions 
+(22470, 128), the graph connections are stored in an edge_index tensor with 
+dimensions (2, 342004), and the class labels have dimensions (22470).
+
+The MLP uses only the node features, while the GCN uses both the features and graph connections. This allows the GCN to combine information from connected pages, potentially improving classification when neighbouring pages belong to similar categories.
 
 ## Dataset Statistics and Class Distribution
+An initial dataset audit was performed using dataset.py to verify the graph dimensions,
+class distribution and validity of the node features and labels. The dataset satistics
+are given by:
+```
+Number of nodes:         22,470
+Undirected edges         171,002
+Directed edge entries:   342,004
+Features per node:       128
+Number of classes:       4
+Graph density:           0.001
+Graph transitivity:      0.232
+```
+The graph is not a Directed graph or a Temporal graph and there are no edge features.
+
+The 22,470 nodes are distributed across four classes:
+```
+Class Distribution:
+Class 0      6,495      28.91%
+Class 1      6,880      30.62%
+Class 2      5,768      25.67%
+Class 3      3,327      14.81%
+
+Total        22,470     100.00%
+```
+From the class distribution is is seen there is some imbalance, with class 1
+containing the most amount of nodes and class 3 containing the least. This is
+important as a model my schieve high overall accuracy while performing poorly
+on less common classes.
+
+Because of this, classification performance will be evaluated using per-class 
+precision and recall, macro-F1 and multiclass AUROC in addition to overall accuracy.
+
+The graph density of approximately 0.001 indicates that relatively few connections exist
+compared with the total number of possible connections. This indicates that the network 
+is sparse, with each page connected to relatively few other pages compared to the total
+number of pages. The transitivity of 0.232 indicates that some neighbouring pages form
+interconnected groups, which may provide useful information for graph-based classification.
 
 ## Training, Validation and Test Splits
+The dataset is divided into training, validation and testing sets using a 70/15/15 split.
+The splitting procedure is divided by class, meaning that the nodes from each category
+are divided separately to preserve approximately the same class distribution across the
+three sets.
+
+A fixed random seed of 42 is used to ensure that the splits can be reproduced. 
+Both the MLP and GCN use the same splits to allow a fair comparison.
+
+The resulting node counts for each split are given by:
+```
+Class        Training        Validation        Test
+-----------------------------------------------------
+Class 0       4,546           974               975
+Class 1       4,816           1,032             1,032
+Class 2       4,037           865               866
+Class 3       2,328           499               500
+
+Total         15,727          3,370             3,373
+```
+The training set is used to calculate the cross-entropy loss and update the model
+parameters. The validation set is used to evaluate performance during training, 
+select the checkpoint with the lowest validation loss and establish a confidence
+threshold for manual review. The testing set is reserved for final evaluation.
+
+Boolean masks named train_mask, val_mask and test_mask are used to identify the nodes 
+belonging to each split. The dataset verification confirmed that no nodes belong 
+to more than one split and that every node belongs to exactly one split.
 
 ## Feature Standardisation
 
+
 ## Data Leakage Prevention
+
 
 # Model Implementation and Training
 ## Multi-Layer Perceptron (MLP) Baseline
@@ -245,8 +344,6 @@ and confidence reliability.
 
 ## Verification and Independent Work
 
-# References
-
 
 # Feasability Review (Checked off on 6/10/2026)
 ## User Need, Scope & Acceptance Criteria
@@ -293,11 +390,12 @@ will be measured. The next experiment will establish reproducible train/validati
 splits and train an MLP baseline. If GCN performance is poor, hyperparameters will be 
 adjusted. If it offers little improvement, the MLP will remain the simpler fallback.
 
-## References:
-[1] B. Rozemberczki, C. Allen, and R. Sarkar, “Multi-Scale Attributed Node Embedding,” 
-Journal of Complex Networks, 2021. [Online]. Available: https://arxiv.org/abs/1909.13021
+# References:
+[1] B. Rozemberczki, C. Allen, and R. Sarkar, “Multi-Scale Attributed Node Embedding,” Journal of Complex Networks, 2021. [Online]. Available: https://arxiv.org/abs/1909.13021
 
+[2] Stanford Network Analysis Project (SNAP), “Facebook Large Page-Page Network,” Stanford University. [Online]. Available: https://snap.stanford.edu/data/facebook-large-page-page-network.html
 
+[3] PyTorch Geometric, “torch_geometric.datasets.FacebookPagePage,” PyTorch Geometric Documentation, Version 2.6.0. [Online]. Available: https://pytorch-geometric.readthedocs.io/en/2.6.0/generated/torch_geometric.datasets.FacebookPagePage.html
 
 
 
