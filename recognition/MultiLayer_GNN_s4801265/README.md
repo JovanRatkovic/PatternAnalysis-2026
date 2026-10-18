@@ -1,6 +1,13 @@
-# Multi-layer Graph Neural Network for Classifying Facebook Pages
+# COMP3710 Project: Multi-layer Graph Neural Network for Classifying Facebook Pages
 
-## The Engineering Dilemma
+## The Open Research Question
+In web-scale graph classification, models frequently achieve deceptively high aggregate
+test accuracy while concealing catastrophic overconfidence on borderline, ambiguous, 
+or out-of-distribution cases.
+
+This project will
+
+
 
 ## The Proposed Solution
 
