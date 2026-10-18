@@ -32,16 +32,17 @@ Facebook Page-Page dataset and the GCNConv layers used by the GCN.
 
 Due to issues in the PyTorch Geometric dataset, the Facebook Page-Page dataset
 was obtained from this link:
+
 https://github.com/gayanku/facebook_page-page_dataset/tree/main
 
 The libraries and their version used for this project are:
-Python              3.10.12
-PyTorch:            2.14.1+cu130
-PyTorch Geometric:  2.8.0.post1
-NumPy:              2.2.6
-scikit-learn:       1.7.2
-Matplotlib:         3.10.9
-CUDA:               13.0
+- Python              3.10.12
+- PyTorch:            2.14.1+cu130
+- PyTorch Geometric:  2.8.0.post1
+- NumPy:              2.2.6
+- scikit-learn:       1.7.2
+- Matplotlib:         3.10.9
+- CUDA:               13.0
 
 The project also uses standard Python libraries including argparse, csv and time. 
 These are included with Python and do not require separate installation.
@@ -87,10 +88,37 @@ And the following for the GCN:
 - mlp_reliability.png
 
 ## Installation Instructions
+The project requires Python and the libraries listed above.
+A Python virtual environment can be created and activated using:
+```bash
+python3 -m venv ~/gnn_env
+source ~/gnn_env/bin/activate
+```
+The required packages and libraries listed above must then be installed.
+
+To install and load the dataset you must use the link:
+
+https://github.com/gayanku/facebook_page-page_dataset/tree/main
+
+From this link the dataset is given by the file: facebook.npz
+
+...
 
 ## Reproducability and Random Seeds
 
 ## Running Training and Inference
+The training script can train both the MLP baseline and the two-layer GCN separately
+using the --model argument.
+To train the MLP:
+```bash
+python train.py --model mlp
+```
+To train the GCN:
+```bash
+python train.py --model gcn
+```
+
+To run the inference of a model do...
 
 # Dataset and Preprocessing
 
