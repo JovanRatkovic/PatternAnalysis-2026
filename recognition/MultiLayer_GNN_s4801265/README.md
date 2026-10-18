@@ -91,6 +91,10 @@ Journal of Complex Networks, 2021. [Online]. Available: https://arxiv.org/abs/19
 
 # Model Implementation and Training
 ## Multi-Layer Perceptron (MLP) Baseline
+The multi-layer perceptron is a neural network model which consists of multiple layers of
+neurons. The model is made up of an input layer, hidden layer(s), and an output layer, 
+and can be used to solve both classification and regression problems.
+
 
 ## Two-Layer Graph Convolutional Network (GCN)
 
