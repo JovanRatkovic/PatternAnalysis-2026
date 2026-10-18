@@ -466,7 +466,7 @@ def measure_resources(model, data, device):
         print("Peak GPU Memory: N/A (CPU execution)")
 
 
-def analyse_failures(model, data, num_examples=3):
+def analyse_failures(model, data, num_examples=5):
     """
     Identify confidently incorrect test-node predictions.
 
@@ -673,7 +673,7 @@ def main():
     )
 
     # Investigate three confidently incorrect predictions
-    analyse_failures(model, data, num_examples=3)
+    analyse_failures(model, data, num_examples=5)
 
 
 
