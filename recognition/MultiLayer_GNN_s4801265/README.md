@@ -13,55 +13,6 @@ This project will
 
 ## How the Algorithm Works
 
-# Feasability Review
-## User Need, Scope & Acceptance Criteria
-This multi-layer GNN project will develop a two-layer Graph Convolutional Network (GCN) 
-to classify Facebook pages as politicians, governmental organisations, television shows 
-or companies. The intended users are social network analysts seeking to reduce manual classification. 
-The project will investigate whether the GCN produces more reliable confidence scores on ambiguous 
-predictions than a Multi-Layer Perceptron (MLP) baseline. The acceptance criteria are:
-1.	Classification: Achieve reasonable accuracy and compare macro-F1, per-class precision/recall and multiclass AUROC against the MLP.
-2.	Confidence: Compare confidence on correct and incorrect predictions and measure Expected Calibration Error (ECE).
-3.	Manual review: Establish a confidence threshold and measure accepted-prediction accuracy and manual review workload.
-4.	Resources: Compare inference time, parameter count and peak GPU memory, targeting under 2 GB VRAM and 5 seconds for test-set inference.
-5.	Failure analysis: Investigate at least three ambiguous or incorrectly classified nodes.
-
-## Model Choice & Course Concepts
-The Facebook Page-Page Network contains 22,470 nodes, 171,002 undirected connections, 
-128-dimensional features and four classes. A two-layer GCN implemented in PyTorch 
-Geometric will combine node features with information from up to two-hop neighbours. 
-An MLP using only node features will serve as the baseline to evaluate whether graph 
-connections improve classification and confidence reliability. Rozemberczki et al. [1] 
-reported a GCN micro-F1 of 0.932 on this dataset. Their configuration of 32 hidden filters, 
-Adam, learning rate 0.01 and dropout 0.5 will be used initially. The project is classified 
-as Normal Difficulty and applies graph convolutions, feature representations, 
-regularisation and model evaluation. Transductive semi-supervised learning will be used, 
-with test labels excluded from training. Learned embeddings will be visualised using t-SNE 
-or UMAP.
-
-## Preliminary Feasibility Evidence
-An initial dataset audit was completed using PyTorch Geometric. The dataset loaded 
-successfully with 22,470 nodes, 342,004 directed edge entries, 128 features per node 
-and four classes. The class distribution ranged from 3,327 nodes (14.81%) to 6,880 
-nodes (30.62%), indicating some class imbalance. The audit confirms that the dataset 
-was successfully loaded and contains the expected node features and classification 
-labels. The uneven class distribution also shows why it is important to evaluate 
-performance across individual classes rather than relying on overall accuracy. Model 
-training and confidence reliability have not yet been tested.
-
-## Risks, Budget & Fallback
-The main risks are misleading graph connections, overconfident predictions and label 
-leakage. These will be addressed through held-out evaluation, confidence analysis and 
-training-label masking. The initial GCN will train for up to 200 epochs within a 
-proposed 30-minute training budget and 2 GB VRAM limit. Runtime and memory usage 
-will be measured. The next experiment will establish reproducible train/validation/test 
-splits and train an MLP baseline. If GCN performance is poor, hyperparameters will be 
-adjusted. If it offers little improvement, the MLP will remain the simpler fallback.
-
-## References:
-[1] B. Rozemberczki, C. Allen, and R. Sarkar, “Multi-Scale Attributed Node Embedding,” 
-Journal of Complex Networks, 2021. [Online]. Available: https://arxiv.org/abs/1909.13021
-
 # Dependencies and Reproducability
 ## Software Dependencies and VErsions
 
@@ -93,7 +44,17 @@ Journal of Complex Networks, 2021. [Online]. Available: https://arxiv.org/abs/19
 ## Multi-Layer Perceptron (MLP) Baseline
 The multi-layer perceptron is a neural network model which consists of multiple layers of
 neurons. The model is made up of an input layer, hidden layer(s), and an output layer, 
-and can be used to solve both classification and regression problems.
+where the neurons in the MLP typically use nonlinear activation functions, allowing the
+network to learn complex patterns in data. This type of neural network can be used to 
+solve both classification and regression problems.
+
+For this project the MLP was chosen as a baseline as it does not consider and edge
+connections between the nodes, only the node features themselves for classification.
+This is useful as it can help evaluate whether graph connections improve classification
+and confidence reliability.
+
+
+
 
 
 ## Two-Layer Graph Convolutional Network (GCN)
@@ -197,6 +158,54 @@ and can be used to solve both classification and regression problems.
 # References
 
 
+# Feasability Review (Checked off on 6/10/2026)
+## User Need, Scope & Acceptance Criteria
+This multi-layer GNN project will develop a two-layer Graph Convolutional Network (GCN) 
+to classify Facebook pages as politicians, governmental organisations, television shows 
+or companies. The intended users are social network analysts seeking to reduce manual classification. 
+The project will investigate whether the GCN produces more reliable confidence scores on ambiguous 
+predictions than a Multi-Layer Perceptron (MLP) baseline. The acceptance criteria are:
+1.	Classification: Achieve reasonable accuracy and compare macro-F1, per-class precision/recall and multiclass AUROC against the MLP.
+2.	Confidence: Compare confidence on correct and incorrect predictions and measure Expected Calibration Error (ECE).
+3.	Manual review: Establish a confidence threshold and measure accepted-prediction accuracy and manual review workload.
+4.	Resources: Compare inference time, parameter count and peak GPU memory, targeting under 2 GB VRAM and 5 seconds for test-set inference.
+5.	Failure analysis: Investigate at least three ambiguous or incorrectly classified nodes.
+
+## Model Choice & Course Concepts
+The Facebook Page-Page Network contains 22,470 nodes, 171,002 undirected connections, 
+128-dimensional features and four classes. A two-layer GCN implemented in PyTorch 
+Geometric will combine node features with information from up to two-hop neighbours. 
+An MLP using only node features will serve as the baseline to evaluate whether graph 
+connections improve classification and confidence reliability. Rozemberczki et al. [1] 
+reported a GCN micro-F1 of 0.932 on this dataset. Their configuration of 32 hidden filters, 
+Adam, learning rate 0.01 and dropout 0.5 will be used initially. The project is classified 
+as Normal Difficulty and applies graph convolutions, feature representations, 
+regularisation and model evaluation. Transductive semi-supervised learning will be used, 
+with test labels excluded from training. Learned embeddings will be visualised using t-SNE 
+or UMAP.
+
+## Preliminary Feasibility Evidence
+An initial dataset audit was completed using PyTorch Geometric. The dataset loaded 
+successfully with 22,470 nodes, 342,004 directed edge entries, 128 features per node 
+and four classes. The class distribution ranged from 3,327 nodes (14.81%) to 6,880 
+nodes (30.62%), indicating some class imbalance. The audit confirms that the dataset 
+was successfully loaded and contains the expected node features and classification 
+labels. The uneven class distribution also shows why it is important to evaluate 
+performance across individual classes rather than relying on overall accuracy. Model 
+training and confidence reliability have not yet been tested.
+
+## Risks, Budget & Fallback
+The main risks are misleading graph connections, overconfident predictions and label 
+leakage. These will be addressed through held-out evaluation, confidence analysis and 
+training-label masking. The initial GCN will train for up to 200 epochs within a 
+proposed 30-minute training budget and 2 GB VRAM limit. Runtime and memory usage 
+will be measured. The next experiment will establish reproducible train/validation/test 
+splits and train an MLP baseline. If GCN performance is poor, hyperparameters will be 
+adjusted. If it offers little improvement, the MLP will remain the simpler fallback.
+
+## References:
+[1] B. Rozemberczki, C. Allen, and R. Sarkar, “Multi-Scale Attributed Node Embedding,” 
+Journal of Complex Networks, 2021. [Online]. Available: https://arxiv.org/abs/1909.13021
 
 
 
