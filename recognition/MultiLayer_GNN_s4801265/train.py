@@ -813,7 +813,7 @@ def main():
             dropout=DROPOUT
         ).to(device)
 
-        epochs = 500
+        epochs = 1000
 
     else:
         model = GCN(
@@ -823,7 +823,7 @@ def main():
             dropout=DROPOUT
         ).to(device)
 
-        epochs = 200
+        epochs = 1000
 
     # Define the loss function
     criterion = nn.CrossEntropyLoss()
