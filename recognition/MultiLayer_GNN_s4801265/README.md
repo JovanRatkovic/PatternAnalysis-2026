@@ -163,27 +163,25 @@ The MLP uses only the node features, while the GCN uses both the features and gr
 An initial dataset audit was performed using dataset.py to verify the graph dimensions,
 class distribution and validity of the node features and labels. The dataset satistics
 are given by:
-```
-Number of nodes:         22,470
-Undirected edges         171,002
-Directed edge entries:   342,004
-Features per node:       128
-Number of classes:       4
-Graph density:           0.001
-Graph transitivity:      0.232
-```
+| Property | Value |
+|----------|-------|
+| Number of nodes | 22,470 |
+| Undirected edges | 171,002 |
+| Directed edge entries | 342,004 |
+| Features per node | 128 |
+| Number of classes | 4 |
+| Graph density | 0.001 |
+| Graph transitivity | 0.232 |
 The graph is not a Directed graph or a Temporal graph and there are no edge features.
 
 The 22,470 nodes are distributed across four classes:
-```
-Class Distribution:
-Class 0      6,495      28.91%
-Class 1      6,880      30.62%
-Class 2      5,768      25.67%
-Class 3      3,327      14.81%
-
-Total        22,470     100.00%
-```
+| Class | Number of Nodes | Percentage |
+|-------|-----------------|------------|
+| Class 0 | 6,495 | 28.91% |
+| Class 1 | 6,880 | 30.62% |
+| Class 2 | 5,768 | 25.67% |
+| Class 3 | 3,327 | 14.81% |
+| **Total** | **22,470** | **100.00%** |
 From the class distribution is is seen there is some imbalance, with class 1
 containing the most amount of nodes and class 3 containing the least. This is
 important as a model my schieve high overall accuracy while performing poorly
@@ -208,16 +206,13 @@ A fixed random seed of 42 is used to ensure that the splits can be reproduced.
 Both the MLP and GCN use the same splits to allow a fair comparison.
 
 The resulting node counts for each split are given by:
-```
-Class        Training        Validation        Test
------------------------------------------------------
-Class 0       4,546           974               975
-Class 1       4,816           1,032             1,032
-Class 2       4,037           865               866
-Class 3       2,328           499               500
-
-Total         15,727          3,370             3,373
-```
+| Class | Training | Validation | Test |
+|-------|----------|------------|------|
+| Class 0 | 4,546 | 974 | 975 |
+| Class 1 | 4,816 | 1,032 | 1,032 |
+| Class 2 | 4,037 | 865 | 866 |
+| Class 3 | 2,328 | 499 | 500 |
+| **Total** | **15,727** | **3,370** | **3,373** |
 The training set is used to calculate the cross-entropy loss and update the model
 parameters. The validation set is used to evaluate performance during training, 
 select the checkpoint with the lowest validation loss and establish a confidence
