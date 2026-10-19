@@ -351,6 +351,12 @@ and confidence reliability.
 
 ## Two-Layer Graph Convolutional Network (GCN)
 
+![Two-Layer GCN Diagram](images/gcn_diagram.jpg)
+
+*Figure 2: Illustration of project GCN architecture.*
+
+
+
 ## Model Architectures and Hyperparameters
 
 ## Training Procedure and Optimisation
