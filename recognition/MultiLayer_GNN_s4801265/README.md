@@ -52,7 +52,6 @@ improves classification performance and confidence reliability. A confidence thr
 will also be evaluated to investigate whether uncertain predictions can be identified 
 for manual review.
 
-
 ## The Proposed Solution
 
 ## How the Algorithm Works
@@ -346,7 +345,7 @@ connections between the nodes, only the node features themselves for classificat
 This is useful as it can help evaluate whether graph connections improve classification
 and confidence reliability.
 
-![Multi-Layer Perceptron Diagram](images/mlp_diagram.webp)
+![Multi-Layer Perceptron Diagram](images/mlp_diagram.png)
 
 *Figure 1: General illustration of an MLP architecture [4].*
 
