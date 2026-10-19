@@ -5,18 +5,52 @@ In web-scale graph classification, models frequently achieve deceptively high ag
 test accuracy while concealing catastrophic overconfidence on borderline, ambiguous, 
 or out-of-distribution cases. This can be problematic for automatic classification, as 
 incorrect predictions may not be identified for further review because the model is 
-extremely confident is their classification.
+extremely confident in its classification. The intended users who would benefit from
+automatic classification are social network analysts seeking to reduce manual 
+classification, so it is important that the model works effectively.
 
 This project will investigate whether a multi-layer Graph Neural Network (GNN),
-which for this project is a two-layer Graph Convolutional Network (GCN) can produce
-a more reliable confidence score than a Multi-Layer Perceptron (MLP) baseline when
-classifying facebook pages.
+that is, a two-layer Graph Convolutional Network (GCN), can produce a more reliable 
+confidence score than a Multi-Layer Perceptron (MLP) baseline when classifying facebook 
+pages.
 
-A confidence threshold will be investigate to determine whether uncertain predictions
+A confidence threshold will be investigated to determine whether uncertain predictions
 can be sent for manual review, in order to reduce the risk of automatically accepting
 incorrect classifications. The results will then be used to evaluate whether the
 additional complexity of the GCN and computational costs justify its performance
 when compared to the simpler MLP baseline.
+
+## Background Research and GNN Model Selection
+Graph-based classification can benefit from using both the features of individual nodes 
+and the connections between them. Rozemberczki et al. [1] investigated attributed node 
+embeddings, where information from a node and its neighbouring nodes is used to learn 
+useful representations. By incorporating information from neighbouring nodes (nodes that 
+are connected through edges in the graph), their research investigated whether patterns in 
+the surrounding network could provide additional information that improves node 
+classification.
+
+Rozemberczki et al. [1] evaluated several graph-based learning methods
+using the Facebook Large Page-Page Network. Their results showed that a Graph 
+Convolutional Network (GCN) achieved a test micro-F1 score of 0.932, compared with 0.919 
+for a Graph Attention Network (GAT) and 0.941 for MixHop. Although MixHop achieved a 
+higher score, the GCN was chosen for this project because it provides a simpler 
+architecture while still demonstrating strong classification performance. This makes it 
+suitable for investigating whether incorporating graph connections improves classification 
+performance and confidence reliability when compared with an MLP baseline.
+
+The setup used by the paper used a two-layer GCN with 32 hidden filters, the Adam 
+optimiser, a learning rate of 0.01, 200 training epochs, an 80/20 training-test split, 
+and dropout of 0.5. These parameter and training settings will be used as a good starting
+point for the GCN model in this project, however a validation set is going to be used
+as well as training and test to determine the best model.
+
+The research primarily evaluates classification performance and does not investigate 
+whether the models produce reliable confidence scores when their predictions are 
+incorrect. This is the main area investigated in this project, where the GCN will be 
+compared against an MLP baseline to determine whether incorporating graph connections 
+improves classification performance and confidence reliability. A confidence threshold 
+will also be evaluated to investigate whether uncertain predictions can be identified 
+for manual review.
 
 
 ## The Proposed Solution
@@ -34,8 +68,9 @@ Due to issues in the PyTorch Geometric dataset, the Facebook Page-Page dataset
 was obtained from this link:
 
 https://github.com/gayanku/facebook_page-page_dataset/tree/main
-```
+
 The libraries and their version used for this project are:
+```
 - Python              3.10.12
 - PyTorch:            2.14.1+cu130
 - PyTorch Geometric:  2.8.0.post1
@@ -316,6 +351,10 @@ and confidence reliability.
 ### Failure Case 2
 
 ### Failure Case 3
+
+### Failure Case 4
+
+### Failure Case 5
 
 ### Common Failure Modes and Root Causes
 
