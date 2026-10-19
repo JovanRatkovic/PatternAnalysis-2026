@@ -60,9 +60,9 @@ for manual review.
 # Dependencies and Reproducability
 ## Software Dependencies and Versions
 This project is implemented in Python using PyTorch and PyTorch Geometric.
-PyTorch is used to implement and train the Multi-Layer Perceptron (MLP) and 
-Graph Convolutional Network (GCN), while PyTorch Geometric provides the 
-Facebook Page-Page dataset and the GCNConv layers used by the GCN.
+PyTorch is used to implement and train the MLP and GCN models, while PyTorch 
+Geometric provides the Facebook Page-Page dataset and the GCNConv layers used 
+by the GCN.
 
 Due to issues in the PyTorch Geometric dataset, the Facebook Page-Page dataset
 was obtained from this link:
@@ -71,13 +71,13 @@ https://github.com/gayanku/facebook_page-page_dataset/tree/main
 
 The libraries and their version used for this project are:
 ```
-- Python              3.10.12
-- PyTorch:            2.14.1+cu130
-- PyTorch Geometric:  2.8.0.post1
-- NumPy:              2.2.6
-- scikit-learn:       1.7.2
-- Matplotlib:         3.10.9
-- CUDA:               13.0
+Python               3.10.12
+PyTorch:             2.14.1+cu130
+PyTorch Geometric:   2.8.0.post1
+NumPy:               2.2.6
+scikit-learn:        1.7.2
+Matplotlib:          3.10.9
+CUDA:                13.0
 ```
 The project also uses standard Python libraries including argparse, csv and time. 
 These are included with Python and do not require separate installation.
@@ -102,7 +102,7 @@ consists of the five mandatory files:
 
 ### Files Produced From Running Training
 Training produces the following files for the MLP:
-- gcn_best.pt 
+- gcn_best.pt
 - gcn_predictions.csv 
 - gcn_accuracy.png 
 - gcn_confidence.png
@@ -121,6 +121,10 @@ And the following for the GCN:
 - mlp_loss.png 
 - mlp_manual_review.png
 - mlp_reliability.png
+
+The code prints test accuracy, macro-F1, multiclass AUROC, per-class precision/recall, 
+ECE, inference time, parameter count, GPU memory and failure-case information to the
+terminal. When running on the Rangpur cluster these are saved in the resulting .out file.
 
 ## Installation Instructions
 The project requires Python and the libraries listed above.

@@ -1,4 +1,3 @@
-
 import torch
 from torch import nn
 
@@ -23,7 +22,7 @@ from sklearn.metrics import (
 # Training settings
 SEED = 42
 LEARNING_RATE = 0.01
-EPOCHS = 500
+EPOCHS = 1000
 DROPOUT = 0.5
 HIDDEN_DIM = 32
 
@@ -675,7 +674,7 @@ def measure_resources(model, data, device):
         parameter.numel() for parameter in model.parameters()
     )
 
-    print("\n=== MLP RESOURCE MEASUREMENTS ===")
+    print(f"\n=== {type(model).__name__.upper()} RESOURCE MEASUREMENTS ===")
     print(f"Model Parameters: {parameter_count:,}")
 
     # Warm up before timing
@@ -762,7 +761,7 @@ def analyse_failures(model, data, num_examples=5):
         )
     ]
 
-    print("\n=== MLP FAILURE ANALYSIS ===")
+    print(f"\n=== {type(model).__name__.upper()} FAILURE ANALYSIS ===")
 
     for node_id in sorted_indices[:num_examples]:
         node = node_id.item()
@@ -813,7 +812,7 @@ def main():
             dropout=DROPOUT
         ).to(device)
 
-        epochs = 1000
+        epochs = EPOCHS
 
     else:
         model = GCN(
@@ -823,7 +822,7 @@ def main():
             dropout=DROPOUT
         ).to(device)
 
-        epochs = 1000
+        epochs = EPOCHS
 
     # Define the loss function
     criterion = nn.CrossEntropyLoss()

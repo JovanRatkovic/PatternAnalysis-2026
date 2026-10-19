@@ -14,4 +14,8 @@ __pycache__/
 # Ignore png files
 *.png
 
+# Ignore VScode files
 .vscode/
+
+# Ignore Output Files
+*.log
