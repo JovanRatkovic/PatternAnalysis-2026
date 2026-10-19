@@ -172,6 +172,7 @@ are given by:
 | Number of classes | 4 |
 | Graph density | 0.001 |
 | Graph transitivity | 0.232 |
+
 The graph is not a Directed graph or a Temporal graph and there are no edge features.
 
 The 22,470 nodes are distributed across four classes:
@@ -182,6 +183,7 @@ The 22,470 nodes are distributed across four classes:
 | Class 2 | 5,768 | 25.67% |
 | Class 3 | 3,327 | 14.81% |
 | **Total** | **22,470** | **100.00%** |
+
 From the class distribution is is seen there is some imbalance, with class 1
 containing the most amount of nodes and class 3 containing the least. This is
 important as a model my schieve high overall accuracy while performing poorly
@@ -213,6 +215,7 @@ The resulting node counts for each split are given by:
 | Class 2 | 4,037 | 865 | 866 |
 | Class 3 | 2,328 | 499 | 500 |
 | **Total** | **15,727** | **3,370** | **3,373** |
+
 The training set is used to calculate the cross-entropy loss and update the model
 parameters. The validation set is used to evaluate performance during training, 
 select the checkpoint with the lowest validation loss and establish a confidence
