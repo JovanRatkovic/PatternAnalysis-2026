@@ -345,7 +345,7 @@ connections between the nodes, only the node features themselves for classificat
 This is useful as it can help evaluate whether graph connections improve classification
 and confidence reliability.
 
-![Multi-Layer Perceptron Diagram](images/mlp_diagram.jpeg)
+![Multi-Layer Perceptron Diagram](images/mlp_diagram.jpg)
 
 *Figure 1: General illustration of an MLP architecture [4].*
 
