@@ -127,23 +127,50 @@ ECE, inference time, parameter count, GPU memory and failure-case information to
 terminal. When running on the Rangpur cluster these are saved in the resulting .out file.
 
 ## Installation Instructions
-The project requires Python and the libraries listed above.
+The project requires Python 3.10 and the libraries listed in the Software 
+Dependencies and Versions section.
 A Python virtual environment can be created and activated using:
 ```bash
 python3 -m venv ~/gnn_env
 source ~/gnn_env/bin/activate
 ```
-The required packages and libraries listed above must then be installed.
+The required Python libraries can then be installed using pip:
+```bash
+python -m pip install torch
+python -m pip install torch-geometric
+python -m pip install numpy scikit-learn matplotlib
+```
+For GPU execution, a CUDA-compatible PyTorch installation is required. The appropriate
+installation command depends on the CUDA support available on the system.
 
-To install and load the dataset you must use the link:
+The Facebook Page-Page Network dataset was obtained from:
 
 https://github.com/gayanku/facebook_page-page_dataset/tree/main
 
-From this link the dataset is given by the file: facebook.npz
+The facebook.npz file must be downloaded and converted into the format expected by 
+the PyTorch Geometric dataset loader before running the project.
 
 ...
 
 ## Reproducability and Random Seeds
+A fixed random seed of 42 is used throughout the project to improve reproducibility. 
+This ensures that the dataset is divided into the same training, validation and test 
+sets each time the code is executed, allowing both the MLP and GCN to be evaluated 
+using identical data splits.
+
+The dataset is divided using a stratified 70/15/15 split, preserving approximately the 
+same class distribution across the three sets. The same feature standardisation procedure
+is applied to both models, with the mean and standard deviation calculated using only 
+the training nodes to prevent data leakage.
+
+PyTorch's random seed is also set to 42 before model initialisation and training. 
+Both models use the same training settings, including the learning rate, dropout rate 
+and maximum number of epochs. The model checkpoint with the lowest validation loss is 
+saved and used for final test evaluation.
+
+Although these measures improve reproducibility, small differences in results may 
+still occur across different hardware or software environments, particularly when using GPU operations.
+
 
 ## Running Training and Inference
 The training script can train both the MLP baseline and the two-layer GCN separately
@@ -156,6 +183,12 @@ python train.py --model mlp
 To train the GCN:
 ```bash
 python train.py --model gcn
+```
+
+To save the output when running do:
+```bash
+python train.py --model mlp 2>&1 | tee mlp_training.log
+python train.py --model gcn 2>&1 | tee gcn_training.log
 ```
 
 To run the inference of a model do
@@ -265,10 +298,40 @@ belonging to each split. The dataset verification confirmed that no nodes belong
 to more than one split and that every node belongs to exactly one split.
 
 ## Feature Standardisation
+The node features are standardised to ensure that differences in the scale of individual 
+features do not affect the training of the models. Without standardisation, features with 
+larger numerical values may have a greater influence on the model than features with 
+smaller values, even if they are not more important for classification. Each of the 128 
+features is standardised separately by subtracting its mean and dividing by its standard 
+deviation, so that the training features have approximately zero mean and unit standard 
+deviation.
 
+The mean and standard deviation are calculated using only the training nodes and the same 
+transformation is then applied to all nodes in the dataset. This is important because using 
+statistics calculated from the validation or test nodes could introduce information from 
+these sets into preprocessing and affect the reliability of the evaluation. To prevent 
+division by zero, standard deviations smaller than 10^{-8} are replaced with 10^{-8}. 
+The same standardised node features are used by both the MLP and GCN to ensure a consistent 
+comparison.
 
 ## Data Leakage Prevention
+This project uses transductive semi-supervised node classification, where the GCN uses the 
+features and graph connections of all nodes, including validation and test nodes, but only 
+the training node labels are used to update the model parameters. During training, the 
+model produces predictions for all nodes in the graph, but the cross-entropy loss is 
+calculated only for nodes identified by train_mask. This prevents the validation and test 
+labels from directly influencing the model during training while still allowing the GCN to 
+learn from the graph structure.
 
+The validation labels are used to monitor model performance, select the checkpoint with the 
+lowest validation loss and establish a confidence threshold for manual review. The test 
+labels are reserved for final evaluation so that the model can be assessed using labels 
+that were not used for training or model selection. This is important because using test 
+labels during training or selecting model settings based on test performance could produce 
+overly optimistic results that do not accurately represent the model's ability to classify 
+unseen labels. The dataset splitting procedure also verifies that the training, validation 
+and test masks do not overlap and that every node belongs to exactly one set. Both the MLP 
+and GCN use the same splits, ensuring that their performance can be compared fairly.
 
 # Model Implementation and Training
 ## Multi-Layer Perceptron (MLP) Baseline
@@ -282,6 +345,10 @@ For this project the MLP was chosen as a baseline as it does not consider edge
 connections between the nodes, only the node features themselves for classification.
 This is useful as it can help evaluate whether graph connections improve classification
 and confidence reliability.
+
+![Multi-Layer Perceptron Diagram](images/mlp_diagram.webp)
+
+*Figure 1: General illustration of an MLP architecture [4].*
 
 ## Two-Layer Graph Convolutional Network (GCN)
 
@@ -438,6 +505,9 @@ adjusted. If it offers little improvement, the MLP will remain the simpler fallb
 
 [3] PyTorch Geometric, “torch_geometric.datasets.FacebookPagePage,” PyTorch Geometric Documentation, Version 2.6.0. [Online]. Available: https://pytorch-geometric.readthedocs.io/en/2.6.0/generated/torch_geometric.datasets.FacebookPagePage.html
 
+[4] University of Nottingham, “Practical: Multi-layer perceptron,”
+Machine Learning for Image Data, FutureLearn. [Online].
+Available: https://www.futurelearn.com/info/courses/machine-learning-for-image-data/0/steps/362737
 
 
 
