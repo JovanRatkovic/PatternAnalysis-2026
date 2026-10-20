@@ -365,12 +365,20 @@ and confidence reliability.
 ## Training and Validation Loss Curves
 ![MLP Loss Diagram](images/mlp_loss.jpg)
 
+*Figure 3: MLP training and validation cross-entropy loss across 1000 epochs.*
+
 ![GCN Loss Diagram](images/gcn_loss.jpg)
+
+*Figure 4: GCN training and validation cross-entropy loss across 1000 epochs.*
 
 ## Training and Validation Accuracy Curves
 ![MLP Accuracy Diagram](images/mlp_accuracy.jpg)
 
+*Figure 5: MLP training and validation accuracy across 1000 epochs.*
+
 ![GCN Accuracy Diagram](images/gcn_accuracy.jpg)
+
+*Figure 6: GCN training and validation accuracy across 1000 epochs.*
 
 # Example Inputs, Outputs and Visualisations
 ## Example Input Graph and Node Features
@@ -382,10 +390,16 @@ and confidence reliability.
 ## Learned Node Embeddings t-SNE
 ![GCN t-SNE Diagram](images/gcn_tsne.jpg)
 
+*Figure 7: Two-dimensional t-SNE visualisation of learned GCN node embeddings, coloured by ground-truth class.*
+
 ## Confusion Matrices
 ![MLP Confusion Matrix](images/mlp_confusion_matrix.jpg)
 
+*Figure 8: Confusion matrix showing the MLP's predicted and actual classes on the test set.*
+
 ![GCN Confusion Matrix](images/gcn_confusion_matrix.jpg)
+
+*Figure 9: Confusion matrix showing the GCN's predicted and actual classes on the test set.*
 
 # Investigation of the Open Research Dilemma
 ## Research Question: Confidence and Ambiguity
@@ -405,14 +419,22 @@ and confidence reliability.
 ### Confidence on Correct and Incorrect Predictions
 ![MLP Confidence Distribution](images/mlp_confidence.jpg)
 
+*Figure 10: Distribution of MLP prediction confidence for correctly and incorrectly classified test nodes.*
+
 ![GCN Confidence Distribution](images/gcn_confidence.jpg)
+
+*Figure 11: Distribution of GCN prediction confidence for correctly and incorrectly classified test nodes.*
 
 ### Expected Calibration Error (ECE)
 
 ### Reliability Diagrams and Calibration Analysis
 ![MLP Reliability Diagram](images/mlp_reliability.jpg)
 
+*Figure 12: MLP reliability diagram comparing average prediction confidence with observed classification accuracy.*
+
 ![GCN Reliability Diagram](images/gcn_reliability.jpg)
+
+*Figure 13: GCN reliability diagram comparing average prediction confidence with observed classification accuracy.*
 
 ### Overconfidence and Ambiguous Predictions
 
@@ -432,7 +454,11 @@ for
 ### Accuracy–Workload Trade-off
 ![MLP Manual Review Trade-off](images/mlp_manual_review.jpg)
 
+*Figure 14: MLP trade-off between automatically accepted prediction accuracy and the percentage of test nodes sent for manual review.*
+
 ![GCN Manual Review Trade-off](images/gcn_manual_review.jpg)
+
+*Figure 15: GCN trade-off between automatically accepted prediction accuracy and the percentage of test nodes sent for manual review.*
 
 ## Computational Resource Profiling
 ### Model Parameter Count
