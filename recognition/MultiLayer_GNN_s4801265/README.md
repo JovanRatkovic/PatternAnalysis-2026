@@ -361,6 +361,16 @@ and confidence reliability.
 ## Training Procedure and Optimisation
 
 ## Validation and Best Model Selection
+| Metric | MLP | GCN |
+|---|---:|---:|
+| Maximum Training Epochs | 1000 | 1000 |
+| Best Epoch | 182 | 297 |
+| Training Loss | 0.4500 | 0.1395 |
+| Training Accuracy | 83.84% | 95.86% |
+| Validation Loss | 0.5792 | 0.2328 |
+| Validation Accuracy | 79.70% | 93.65% |
+
+
 
 ## Training and Validation Loss Curves
 ![MLP Loss Diagram](images/mlp_loss.jpg)
@@ -408,15 +418,34 @@ and confidence reliability.
 ### Experimental Setup and Fair Comparison
 
 ### Accuracy and Macro-F1 Comparison
+| Metric | MLP | GCN |
+|---|---:|---:|
+| Test Accuracy | 80.55% | 93.30% |
+| Macro-F1 | 0.7875 | 0.9292 |
 
 ### Per-Class Precision and Recall
+| Class | MLP Precision | MLP Recall | MLP F1 | GCN Precision | GCN Recall | GCN F1 |
+|---|---:|---:|---:|---:|---:|---:|
+| Class 0 | 0.8443 | 0.8564 | 0.8503 | 0.9356 | 0.9385 | 0.9370 |
+| Class 1 | 0.7914 | 0.8566 | 0.8227 | 0.9293 | 0.9428 | 0.9360 |
+| Class 2 | 0.8106 | 0.7956 | 0.8030 | 0.9413 | 0.9446 | 0.9429 |
+| Class 3 | 0.7410 | 0.6180 | 0.6739 | 0.9207 | 0.8820 | 0.9009 |
+
 
 ### Multiclass AUROC Comparison
+| Metric | MLP | GCN |
+|---|---:|---:|
+| Macro AUROC (One-vs-Rest) | 0.9482 | 0.9880 |
 
 ### Classification Performance Discussion
 
 ## Confidence Reliability and Calibration
 ### Confidence on Correct and Incorrect Predictions
+| Metric | MLP | GCN |
+|---|---:|---:|
+| Mean Confidence (Correct Predictions) | 83.40% | 94.84% |
+| Mean Confidence (Incorrect Predictions) | 57.41% | 74.14% |
+
 ![MLP Confidence Distribution](images/mlp_confidence.jpg)
 
 *Figure 10: Distribution of MLP prediction confidence for correctly and incorrectly classified test nodes.*
@@ -426,6 +455,10 @@ and confidence reliability.
 *Figure 11: Distribution of GCN prediction confidence for correctly and incorrectly classified test nodes.*
 
 ### Expected Calibration Error (ECE)
+| Metric | MLP | GCN |
+|---|---:|---:|
+| Expected Calibration Error (ECE) | 0.0427 | 0.0146 |
+
 
 ### Reliability Diagrams and Calibration Analysis
 ![MLP Reliability Diagram](images/mlp_reliability.jpg)
@@ -445,10 +478,25 @@ There needs to be a balance between workout and prediction accuracy.
 for GCN target accuracy: 0.95
 for 
 
+| Metric | MLP | GCN |
+|---|---:|---:|
+| Target Accepted Accuracy (Validation) | 95% | 95% |
+| Selected Confidence Threshold | 0.86 | 0.56 |
+| Validation Accepted Accuracy | 95.36% | 95.02% |
+
 
 ### Automatically Accepted Prediction Accuracy
+| Metric | MLP | GCN |
+|---|---:|---:|
+| Overall Test Accuracy | 80.55% | 93.30% |
+| Accepted Test Prediction Accuracy | 95.73% | 94.51% |
+
 
 ### Manual Review Workload
+| Metric | MLP | GCN |
+|---|---:|---:|
+| Automatically Accepted Predictions | 48.65% | 97.15% |
+| Predictions Sent for Manual Review | 51.35% | 2.85% |
 
 
 ### Accuracy–Workload Trade-off
@@ -468,9 +516,28 @@ for
 ### Peak GPU Memory Usage
 
 ### Computational Efficiency Comparison
+| Metric | MLP | GCN |
+|---|---:|---:|
+| Model Parameters | 4,260 | 4,260 |
+| Average Inference Time (CPU) | 1.499 ms | 36.090 ms |
+| Peak GPU Memory | Not measured | Not measured |
+
 
 ## Qualitative Failure Analysis
 ### Failure Case Selection Method
+| Model | Node ID | Actual Class | Predicted Class | Confidence |
+|---|---:|---:|---:|---:|
+| MLP | 2924 | 0 | 1 | 99.99% |
+| MLP | 12241 | 3 | 2 | 99.99% |
+| MLP | 5047 | 3 | 0 | 99.87% |
+| MLP | 17334 | 0 | 3 | 99.82% |
+| MLP | 10198 | 1 | 2 | 99.80% |
+| GCN | 16052 | 1 | 2 | 100.00% |
+| GCN | 9254 | 0 | 3 | 100.00% |
+| GCN | 9708 | 3 | 0 | 100.00% |
+| GCN | 20212 | 0 | 3 | 100.00% |
+| GCN | 6163 | 1 | 2 | 100.00% |
+
 
 ### Failure Case 1
 
