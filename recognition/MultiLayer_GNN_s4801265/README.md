@@ -356,7 +356,6 @@ and confidence reliability.
 *Figure 2: Illustration of project GCN architecture.*
 
 
-
 ## Model Architectures and Hyperparameters
 
 ## Training Procedure and Optimisation
@@ -364,8 +363,14 @@ and confidence reliability.
 ## Validation and Best Model Selection
 
 ## Training and Validation Loss Curves
+![MLP Loss Diagram](images/mlp_loss.jpg)
+
+![GCN Loss Diagram](images/gcn_loss.jpg)
 
 ## Training and Validation Accuracy Curves
+![MLP Accuracy Diagram](images/mlp_accuracy.jpg)
+
+![GCN Accuracy Diagram](images/gcn_accuracy.jpg)
 
 # Example Inputs, Outputs and Visualisations
 ## Example Input Graph and Node Features
@@ -374,9 +379,13 @@ and confidence reliability.
 
 ## Class Probabilities and Prediction Confidence
 
-## Learned Node Embeddings (t-SNE or UMAP)
+## Learned Node Embeddings t-SNE
+![GCN t-SNE Diagram](images/gcn_tsne.jpg)
 
 ## Confusion Matrices
+![MLP Confusion Matrix](images/mlp_confusion_matrix.jpg)
+
+![GCN Confusion Matrix](images/gcn_confusion_matrix.jpg)
 
 # Investigation of the Open Research Dilemma
 ## Research Question: Confidence and Ambiguity
@@ -394,21 +403,36 @@ and confidence reliability.
 
 ## Confidence Reliability and Calibration
 ### Confidence on Correct and Incorrect Predictions
+![MLP Confidence Distribution](images/mlp_confidence.jpg)
+
+![GCN Confidence Distribution](images/gcn_confidence.jpg)
 
 ### Expected Calibration Error (ECE)
 
 ### Reliability Diagrams and Calibration Analysis
+![MLP Reliability Diagram](images/mlp_reliability.jpg)
+
+![GCN Reliability Diagram](images/gcn_reliability.jpg)
 
 ### Overconfidence and Ambiguous Predictions
 
 ## Confidence Threshold and Manual Review
 ### Confidence Threshold Selection
+There needs to be a balance between workout and prediction accuracy.
+
+for GCN target accuracy: 0.95
+for 
+
 
 ### Automatically Accepted Prediction Accuracy
 
 ### Manual Review Workload
 
+
 ### Accuracy–Workload Trade-off
+![MLP Manual Review Trade-off](images/mlp_manual_review.jpg)
+
+![GCN Manual Review Trade-off](images/gcn_manual_review.jpg)
 
 ## Computational Resource Profiling
 ### Model Parameter Count

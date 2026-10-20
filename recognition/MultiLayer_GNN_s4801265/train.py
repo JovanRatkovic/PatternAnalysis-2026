@@ -522,7 +522,7 @@ def calculate_ece(probabilities, labels, num_bins=10):
 
 
 def select_confidence_threshold(
-    model, data, target_accuracy=0.90
+    model, data, target_accuracy=0.95
 ):
     """
     Select a confidence threshold using validation data.
@@ -935,7 +935,7 @@ def main():
     threshold = select_confidence_threshold(
         model,
         data,
-        target_accuracy=0.90
+        target_accuracy=0.95
     )
 
     # Measure resource requirements
