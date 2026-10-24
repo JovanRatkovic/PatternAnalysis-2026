@@ -168,7 +168,8 @@ and maximum number of epochs. The model checkpoint with the lowest validation lo
 saved and used for final test evaluation.
 
 Although these measures improve reproducibility, small differences in results may 
-still occur across different hardware or software environments, particularly when using GPU operations.
+still occur across different hardware or software environments, particularly when 
+using GPU operations.
 
 
 ## Running Training and Inference
@@ -287,7 +288,8 @@ are given by:
 | Graph density | 0.001 |
 | Graph transitivity | 0.232 |
 
-The graph is not a Directed graph or a Temporal graph and there are no edge features.
+Source [2] gave values for density and transitivity. The graph is not a Directed 
+graph or a Temporal graph and there are no edge features.
 
 The 22,470 nodes are distributed across four classes:
 | Class | Number of Nodes | Percentage |
@@ -300,7 +302,7 @@ The 22,470 nodes are distributed across four classes:
 
 From the class distribution is is seen there is some imbalance, with class 1
 containing the most amount of nodes and class 3 containing the least. This is
-important as a model my schieve high overall accuracy while performing poorly
+important as a model may achieve high overall accuracy while performing poorly
 on less common classes.
 
 Because of this, classification performance will be evaluated using per-class 
@@ -317,6 +319,18 @@ The dataset is divided into training, validation and testing sets using a 70/15/
 The splitting procedure is divided by class, meaning that the nodes from each category
 are divided separately to preserve approximately the same class distribution across the
 three sets.
+
+A 70/15/15 split was chosen instead of the 80/20 training-test split used in the 
+original research because this project also requires a separate validation set. 
+The validation set is used to select the best model checkpoint based on validation 
+loss and determine a confidence threshold for manual review without using the test 
+set. This is important because the project investigates confidence reliability, 
+and using the test set to make these decisions could produce overly optimistic 
+results. The 70/15/15 split provides sufficient data for training while keeping 
+separate validation and test sets for model selection and final evaluation.
+
+Using 15% test and 70% training gives 15% leftover for validation while being
+really close to the original 80/20 split.
 
 A fixed random seed of 42 is used to ensure that the splits can be reproduced. 
 Both the MLP and GCN use the same splits to allow a fair comparison.
@@ -350,11 +364,11 @@ deviation.
 
 The mean and standard deviation are calculated using only the training nodes and the same 
 transformation is then applied to all nodes in the dataset. This is important because using 
-statistics calculated from the validation or test nodes could introduce information from 
-these sets into preprocessing and affect the reliability of the evaluation. To prevent 
-division by zero, standard deviations smaller than 10^{-8} are replaced with 10^{-8}. 
-The same standardised node features are used by both the MLP and GCN to ensure a consistent 
-comparison.
+statistics calculated from the validation or test nodes could introduce and leak 
+information from these sets into preprocessing and affect the reliability of the 
+evaluation. To prevent division by zero, standard deviations smaller than 10^-8 are 
+replaced with 10^-8. The same standardised node features are used by both the MLP and 
+GCN to ensure a fair and consistent comparison.
 
 ## Data Leakage Prevention
 This project uses transductive semi-supervised node classification, where the GCN uses the 
