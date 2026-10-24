@@ -172,6 +172,7 @@ still occur across different hardware or software environments, particularly whe
 
 
 ## Running Training and Inference
+### Training the Models
 The training script can train both the MLP baseline and the two-layer GCN separately
 using the --model argument.
 
@@ -190,9 +191,51 @@ python train.py --model mlp 2>&1 | tee mlp_training.log
 python train.py --model gcn 2>&1 | tee gcn_training.log
 ```
 
-To run the inference of a model do
+### Running Inference
+The predict.py script is used to perform inference using an already trained MLP or GCN
+model. It loads the saved model weights, uses the same dataset preprocessing and node 
+splits as training, and predicts the class of the selected Facebook page nodes.
 
-...
+For each node, the script displays the predicted class, prediction confidence, 
+probabilities for all four classes, the true class, and whether the prediction is 
+correct.
+
+The general command structure is:
+
+```bash
+python predict.py [--model {mlp,gcn}] [--node NODE_ID] [--num_samples N] [--threshold VALUE] [--checkpoint PATH]
+```
+All arguments are optional. The purpose of each argument is:
+```
+--model:       Selects trained model to use for inference
+--node:        Specifies the index of particular node to classify
+--num_samples: Specifies how many test nodes to display when --node is not provided
+--threshold:   Specifies confidence threshold between 0 and 1 where predictions below
+               this threshold are snet for manual review while equal and above are accepted
+--checkpoint:  Specifies location of saved model weights if in another file
+```
+If no arguments are provided, the script uses the trained GCN model and displays 
+predictions for the first five nodes in the test set.
+
+Example commands:
+```bash
+# Using MLP
+python predict.py --model mlp
+
+# Classifying a specific node
+python predict.py --model gcn --node 16052
+
+# Classifying 10 test set nodes
+python predict.py --model gcn --num_samples 10
+
+# Indicate whether prediction is accepted or sent for manual review using a 0.56
+# confidence threshold
+python predict.py --model gcn --threshold 0.56
+
+# Using a trained model in a different path
+python predict.py --model gcn --checkpoint path/to/gcn_best.pt
+```
+
 
 # Dataset and Preprocessing
 ## Facebook Page-Page Network Dataset
