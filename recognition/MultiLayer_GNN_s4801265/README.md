@@ -732,8 +732,6 @@ the final epoch.
 After training, the best checkpoint is loaded and used for the final test-set evaluation, 
 confidence analysis and other performance measurements.
 
-
-
 ## Validation and Best Model Selection
 | Metric | MLP | GCN |
 |---|---:|---:|
@@ -744,7 +742,17 @@ confidence analysis and other performance measurements.
 | Validation Loss | 0.5792 | 0.2328 |
 | Validation Accuracy | 79.70% | 93.65% |
 
+Examining the validation results, it is observed that the MLP achieved its lowest 
+validation loss of 0.5792 at epoch 182, while the GCN achieved a significantly lower 
+validation loss of 0.2328 at epoch 297. This lower loss over a higher epoch count indicates
+that the GCN has more potential to learn more complex patterns. The GCN also achieved a 
+higher validation accuracy of 93.65% compared to 79.70% for the MLP, indicating that the 
+GCN is more effective at classifying the Facebook pages.
 
+This difference in performance suggests that using graph connections allows the GCN 
+to learn more useful information than the MLP, which only considers the individual node 
+features. Thus, the models saved at epochs 182 and 297 were selected for the final 
+evaluation, as these achieved the lowest validation losses during training.
 
 ## Training and Validation Loss Curves
 ![MLP Loss Diagram](images/mlp_loss.jpg)
@@ -755,6 +763,29 @@ confidence analysis and other performance measurements.
 
 *Figure 4: GCN training and validation cross-entropy loss across 1000 epochs.*
 
+Examining Figures 3 and 4, it is observed that both the MLP and GCN initially experience a 
+significant decrease in training and validation loss, indicating that both models are 
+learning useful patterns during the early stages of training.
+
+For the MLP in Figure 3, the training loss continues to decrease throughout the 1000 
+epochs, while the validation loss begins to increase after approximately 180 epochs. This 
+suggests that the MLP begins to overfit the training data, as it continues improving its 
+performance on the training nodes while becoming less effective on the validation nodes.
+The training loss reducing while validation increaseing widens the generalisation gap, 
+meaning the model becomes less generalised and overfits more to the training data as 
+training continues.
+
+For the GCN in Figure 4, both losses decrease significantly before the validation loss 
+begins to stabilise at approximately 0.23. Although the validation loss increases slightly 
+towards the later epochs, the increase is significantly smaller than that of the MLP, 
+suggesting that the GCN experiences less severe overfitting.
+
+Overall, the GCN achieves a much lower training and validation loss than the MLP, 
+indicating that incorporating the graph connections improves the model's ability to learn 
+useful patterns while also providing better generalisation to the validation nodes. This 
+also supports selecting the best model checkpoint based on validation loss rather than 
+using the final epoch.
+
 ## Training and Validation Accuracy Curves
 ![MLP Accuracy Diagram](images/mlp_accuracy.jpg)
 
@@ -763,6 +794,27 @@ confidence analysis and other performance measurements.
 ![GCN Accuracy Diagram](images/gcn_accuracy.jpg)
 
 *Figure 6: GCN training and validation accuracy across 1000 epochs.*
+
+Examining Figures 5 and 6, it is observed that both the MLP and GCN experience a 
+significant increase in training and validation accuracy during the early epochs, before 
+the rate of improvement begins to decrease.
+
+For the MLP in Figure 5, the training accuracy continues to increase throughout the 1000 
+epochs, reaching approximately 87%, while the validation accuracy begins to stabilise at 
+approximately 82%. The increasing difference between the training and validation accuracy 
+suggests that the MLP experiences some overfitting, as it continues to improve on the 
+training nodes without achieving similar improvements on the validation nodes.
+
+For the GCN in Figure 6, both training and validation accuracy increase significantly 
+before stabilising at approximately 97% and 94%, respectively. The difference between the 
+training and validation accuracy remains relatively small compared to the MLP, indicating 
+that the GCN generalises better to the validation nodes.
+
+Overall, the GCN achieves significantly higher training and validation accuracy than the 
+MLP, suggesting that incorporating the graph connections allows the model to learn more 
+useful patterns for classifying Facebook pages. Although both models show a difference 
+between training and validation accuracy, the GCN maintains higher validation performance 
+with a smaller gap between the two curves.
 
 # Example Inputs, Outputs and Visualisations
 ## Example Input Graph and Node Features
