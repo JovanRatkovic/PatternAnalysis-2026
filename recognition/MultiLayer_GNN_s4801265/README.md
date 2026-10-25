@@ -402,6 +402,47 @@ connections between the nodes, only the node features themselves for classificat
 This is useful as it can help evaluate whether graph connections improve classification
 and confidence reliability.
 
+A fully connected layer in an MLP takes the input features and transforms them into a new 
+set of features using learnable weights and biases. Each neuron in the layer is connected to 
+every input feature, where the input values are multiplied by their corresponding weights 
+and added together with a bias to produce an output.
+
+An activation function is then applied to the output of the layer to introduce nonlinearity, 
+allowing the model to learn more complex patterns in the data. For this project, the ReLU 
+activation function is used, which replaces negative values with zero while leaving positive 
+values unchanged.
+
+The operation of a fully connected layer followed by an activation function can be 
+represented by the following equation:
+```math
+H^{(l+1)}=\sigma\left(H^{(l)}W^{(l)}+b^{(l)}\right)
+```
+
+Where:
+* $H^{(l)}$ and $H^{(l+1)}$ represent the input and output node features.
+  For the first layer, dimensions are $H^{(l)}$: (22,470 x 128), $H^{(l+1)}$: (22,470 x 32).
+  For the second layer, dimensions are $H^{(l)}$: (22,470 x 32), $H^{(l+1)}$: (22,470 x 4).
+* $W^{(l)}$ is the learnable weight matrix used to transform the input features.
+  For the first layer, the dimensions are (128 x 32).
+  For the second layer, the dimensions are (32 x 4).
+* $b^{(l)}$ is the learnable bias.
+  For the first layer, the dimensions are (32).
+  For the second layer, the dimensions are (4).
+* $\sigma$ is the activation function, which is ReLU after the first fully connected layer. 
+No activation function is applied after the second fully connected layer, as it produces the 
+four output logits.
+
+The learnable weights and biases are updated during training so that the MLP can identify 
+useful feature combinations for classification. Unlike the GCN, the MLP does not use an 
+adjacency or degree matrix because it only considers the features belonging to each 
+individual node.
+
+For this project, dropout with a probability of 0.5 is also applied after the ReLU 
+activation of the first fully connected layer. This randomly disables some hidden features 
+during training to reduce overfitting. The remaining features are then passed to the second 
+fully connected layer, which produces four output logits corresponding to the four Facebook 
+page categories.
+
 The implemented MLP for this project contains two fully connected layers. The first layer 
 receives the 128-dimensional features of each Facebook page as input into its first hidden
 layer of 32 neurons and produces 32 hidden features. A ReLU activation function is then 
@@ -432,21 +473,24 @@ the individual Facebook pages and their connections to other pages. A GCN uses g
 convolutional layers to calculate these features.
 
 A graph convolutional layer combines the features of each node with information from its 
-neighbouring nodes to produce a new set of features. This allows the model to consider not 
-only the features belonging to an individual Facebook page, but also information from other 
-Facebook pages which it is connected to.
+neighbouring nodes to produce a new set of features. The graph convolution operation works 
+by first identifying which nodes are connected to each other. These connections are 
+represented by an adjacency matrix $A$, where a value of 1 indicates that two nodes are 
+connected and a value of 0 indicates that they are not. Self-connections are also added with 
+the identity matrix $I$ so that each node includes its own features when calculating the new 
+features.
 
-The graph convolution operation works by first identifying which nodes are connected to each 
-other. These connections are represented by an adjacency matrix $A$, where a value of 1 
-indicates that two nodes are connected and a value of 0 indicates that they are not. 
-Self-connections are also added with the identity matrix $I$ so that each node includes its 
-own features when calculating the new features.
+The updated degree matrix $\hat{D}$ is then calculated from $\hat{A}$ by summing the values 
+in each row and placing these sums along the diagonal of a new matrix. This means that each 
+diagonal value represents the number of connections a node has (i.e. its degree), including 
+its self-connection. The updated degree matrix is then used to normalise the contributions 
+from neighbouring nodes when their features are combined.
 
 The features from each node and its connected neighbours are then combined using a weighted 
-sum. However, some nodes may have significantly more connections than others, which could 
-cause their combined feature values to become excessively large. To prevent this, the 
-contributions from neighbouring nodes are normalised using the number of connections each 
-node has.
+sum. If this is done without degree normalisation then some nodes may have significantly 
+more connections than others, which could cause their combined feature values to become 
+excessively large. The degree matrix is used to prevent this, where the contributions from 
+neighbouring nodes are normalised using the number of connections each node has.
 
 The combined features are then transformed using a learnable weight matrix, which allows the 
 model to produce a new set of features. These weights are updated during training so that 
