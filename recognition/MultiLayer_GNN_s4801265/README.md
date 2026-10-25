@@ -431,9 +431,9 @@ when calculating its hidden features. This allows the model to learn patterns ba
 the individual Facebook pages and their connections to other pages.
 
 The graph convolution operation is given by:
-$
+```math
 H^{(l+1)}=\sigma\left(\hat{D}^{-1/2}\hat{A}\hat{D}^{-1/2}H^{(l)}W^{(l)}+b^{(l)}\right)
-$
+```
 
 Where:
 * $H^{(l)}$ and $H^{(l+1)}$ represent the input and output node features.
