@@ -538,7 +538,51 @@ So the GCN has the structure:
 *Figure 2: Illustration of project GCN architecture.*
 
 ## Model Architectures and Hyperparameters Summary
+Both the MLP and GCN use the same input feature dimension, hidden feature dimension and 
+number of output classes. This allows the two models to be compared using similar 
+architectures, with the main difference being that the MLP uses fully connected layers while 
+the GCN uses graph convolutional layers.
 
+The architectures of the two models are summarised by the table below:
+
+| Layer | MLP | GCN |
+|---|---|---|
+| Input | 128 node features | 128 node features and graph connections |
+| First Layer | Linear (128 → 32) | GCNConv (128 → 32) |
+| Activation Function | ReLU | ReLU |
+| Regularisation | Dropout (0.5) | Dropout (0.5) |
+| Second Layer | Linear (32 → 4) | GCNConv (32 → 4) |
+| Output | Four class logits | Four class logits |
+| Trainable Parameters | 4,260 | 4,260 |
+
+Although both models contain the same number of trainable parameters, the GCN requires 
+additional computation because it combines information from neighbouring nodes during each 
+graph convolutional layer. The MLP instead processes the features of each node independently.
+
+The hyperparameters used for training both models are:
+
+| Hyperparameter | MLP | GCN |
+|---|---|---|
+| Input Features | 128 | 128 |
+| Hidden Features | 32 | 32 |
+| Output Classes | 4 | 4 |
+| Number of Trainable Layers | 2 | 2 |
+| Activation Function | ReLU | ReLU |
+| Dropout Probability | 0.5 | 0.5 |
+| Optimiser | Adam | Adam |
+| Learning Rate | 0.01 | 0.01 |
+| Loss Function | Cross-Entropy Loss | Cross-Entropy Loss |
+| Maximum Training Epochs | 1000 | 1000 |
+| Random Seed | 42 | 42 |
+| Training/Validation/Test Split | 70/15/15 | 70/15/15 |
+
+The same hyperparameters were used for both models to provide a consistent comparison. The 
+hidden feature dimension of 32, learning rate of 0.01 and dropout probability of 0.5 were 
+selected based on the GCN configuration used by Rozemberczki et al. [1].
+
+The maximum number of training epochs was increased to 1000 to allow both models sufficient 
+time to train. However, the model from the final epoch is not necessarily used for 
+evaluation, as the checkpoint with the lowest validation loss is selected.
 
 ## Training Procedure and Optimisation
 
