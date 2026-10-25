@@ -914,6 +914,22 @@ investigated in the confidence reliability.
 
 *Figure 7: Two-dimensional t-SNE visualisation of learned GCN node embeddings, coloured by ground-truth class.*
 
+The learned node embeddings of the GCN were visualised using t-distributed Stochastic 
+Neighbour Embedding (t-SNE). This technique reduces high-dimensional features into two 
+dimensions, allowing the relationships between nodes to be visualised. For this project, 
+4,000 nodes were randomly selected for t-SNE visualisation and their 32-dimensional hidden 
+features from the first GCN layer were reduced to two dimensions using t-SNE.
+
+Examining Figure 7, it is observed that the nodes form several clusters based on their 
+ground-truth classes. Class 0 (Television Shows) is mostly concentrated towards the right, 
+Class 1 (Governmental Organisations) towards the lower left, Class 2 (Companies) towards 
+the upper left, and Class 3 (Politicians) towards the upper right.
+
+Although the classes form relatively distinct groups, there is still some overlap between 
+them, particularly around the centre of the graph. This suggests that the GCN has learned 
+useful feature representations which separate the four Facebook page categories, although 
+some nodes remain difficult to distinguish based on their learned features.
+
 ## Confusion Matrices
 ![MLP Confusion Matrix](images/mlp_confusion_matrix.jpg)
 
@@ -922,6 +938,27 @@ investigated in the confidence reliability.
 ![GCN Confusion Matrix](images/gcn_confusion_matrix.jpg)
 
 *Figure 9: Confusion matrix showing the GCN's predicted and actual classes on the test set.*
+
+Examining Figures 8 and 9, it is observed that both the MLP and GCN correctly classify the 
+majority of test nodes, as shown by the larger values along the diagonal of the confusion 
+matrices. However, the GCN achieves significantly more correct classifications across all 
+four classes compared to the MLP.
+
+For the MLP in Figure 8, Class 3 (Politicians) has the poorest classification performance, 
+with only 309 out of 500 nodes correctly classified. A significant number of these nodes 
+are incorrectly classified as Class 0 (Television Shows), with 93 incorrect predictions. 
+Another noticeable error occurs for Class 2 (Companies), where 129 nodes are incorrectly 
+classified as Class 1 (Governmental Organisations).
+
+For the GCN in Figure 9, the number of correct classifications increases across every 
+class. In particular, Class 3 improves from 309 to 441 correctly classified nodes, while 
+the incorrect classifications of Class 2 as Class 1 decrease from 129 to 39. This indicates 
+that the GCN is more effective at distinguishing between the Facebook page categories.
+
+Overall, the GCN produces fewer classification errors than the MLP, suggesting that 
+incorporating graph connections provides useful additional information for classification. 
+However, some confusion between the classes remains, which will be examined further in the 
+next sections.
 
 # Investigation of the Open Research Dilemma
 ## Research Question: Confidence and Ambiguity
