@@ -428,18 +428,44 @@ The Graph Convolutional Network (GCN) is a type of Graph Neural Network (GNN) wh
 both node features and graph connections to learn information about the nodes. Unlike the 
 MLP, which considers each node separately, the GCN uses information from neighbouring nodes 
 when calculating its hidden features. This allows the model to learn patterns based on both 
-the individual Facebook pages and their connections to other pages.
+the individual Facebook pages and their connections to other pages. A GCN uses graph
+convolutional layers to calculate these features.
 
-The graph convolution operation is given by:
+A graph convolutional layer combines the features of each node with information from its 
+neighbouring nodes to produce a new set of features. This allows the model to consider not 
+only the features belonging to an individual Facebook page, but also information from other 
+Facebook pages which it is connected to.
+
+The graph convolution operation works by first identifying which nodes are connected to each 
+other. These connections are represented by an adjacency matrix $A$, where a value of 1 
+indicates that two nodes are connected and a value of 0 indicates that they are not. 
+Self-connections are also added with the identity matrix $I$ so that each node includes its 
+own features when calculating the new features.
+
+The features from each node and its connected neighbours are then combined using a weighted 
+sum. However, some nodes may have significantly more connections than others, which could 
+cause their combined feature values to become excessively large. To prevent this, the 
+contributions from neighbouring nodes are normalised using the number of connections each 
+node has.
+
+The combined features are then transformed using a learnable weight matrix, which allows the 
+model to produce a new set of features. These weights are updated during training so that 
+the GCN can learn which combinations of features are useful for classification.
+
+The graph convolution operation can be represented by the following equation:
 ```math
 H^{(l+1)}=\sigma\left(\hat{D}^{-1/2}\hat{A}\hat{D}^{-1/2}H^{(l)}W^{(l)}+b^{(l)}\right)
 ```
 
 Where:
 * $H^{(l)}$ and $H^{(l+1)}$ represent the input and output node features.
-* $\hat{A}=A+I$ is the adjacency matrix with self-connections added.
-* $\hat{D}$ is the degree matrix used to normalise the graph connections.
+  For the first layer dimensions are $H^{(l)}$: (22,470 x 128), $H^{(l+1)}$: (22,470 x 32)
+  For the second layer dimensions are $H^{(l)}$: (22,470 x 32), $H^{(l+1)}$: (22,470 x 4)
+* $\hat{A}=A+I$ is the adjacency matrix with self-connections added. (22,470 x 22,470)
+* $\hat{D}$ is the degree matrix used to normalise the graph connections. (22,470 x 22,470)
 * $W^{(l)}$ and $b^{(l)}$ are the learnable weights and bias.
+  For the first layer dimensions are $W^{(l)}$: (128 x 32), $b^{(l)}$: (32)
+  For the second layer dimensions are $W^{(l)}$: (32 x 4), $b^{(l)}$: (4)
 * $\sigma$ is the activation function.
 
 The self-connections allow each node to include its own features, while degree normalisation 
