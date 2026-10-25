@@ -223,7 +223,7 @@ Example commands:
 # Using MLP
 python predict.py --model mlp
 
-# Classifying a specific node
+# Classifying a specific node (can be any node in dataset)
 python predict.py --model gcn --node 16052
 
 # Classifying 10 test set nodes
@@ -268,11 +268,21 @@ edge entries in PyTorch Geometric, representing connections in both directions.
 The dataset does not contain any edge features [3].
 
 Each node has a class label represented by an integer from 0 to 3, corresponding 
-to one of the four Facebook page categories. The feature matrix has dimensions 
-(22470, 128), the graph connections are stored in an edge_index tensor with 
-dimensions (2, 342004), and the class labels have dimensions (22470).
+to one of the four Facebook page categories. The meaning of each class number is given by:
 
-The MLP uses only the node features, while the GCN uses both the features and graph connections. This allows the GCN to combine information from connected pages, potentially improving classification when neighbouring pages belong to similar categories.
+| Class Number | Facebook Page Category |
+|---|---|
+| Class 0 | Television Shows |
+| Class 1 | Governmental Organisations |
+| Class 2 | Companies |
+| Class 3 | Politicians |
+
+The feature matrix has dimensions (22470, 128), the graph connections are stored in an 
+edge_index tensor with dimensions (2, 342004), and the class labels have dimensions (22470).
+
+The MLP uses only the node features, while the GCN uses both the features and graph 
+connections. This allows the GCN to combine information from connected pages, potentially 
+improving classification when neighbouring pages belong to similar categories.
 
 ## Dataset Statistics and Class Distribution
 An initial dataset audit was performed using dataset.py to verify the graph dimensions,
@@ -818,10 +828,86 @@ with a smaller gap between the two curves.
 
 # Example Inputs, Outputs and Visualisations
 ## Example Input Graph and Node Features
+To demonstrate the input data used by the models, node 0 was selected from the test set. 
+The first 10 standardised feature values of this node are shown below, along with its 
+connected neighbouring node.
+
+| Property | Value |
+|---|---|
+| Node ID | 0 |
+| Actual Class | 3 (Politicians) |
+| First 10 Standardised Features | [-0.8766, -0.0561, -0.0574, -0.0610, 0.1523, 0.1374, 0.3039, 0.7328, 1.9887, -1.2992] |
+| Number of Neighbours | 1 |
+| Neighbouring Node ID | 18427 |
+
+Examining the input, it is observed that node 0 contains both positive and negative 
+standardised feature values, with only one neighbouring node connected to it. The MLP uses 
+the node features for classification, while the GCN can also use information from node 
+18427 when calculating its hidden features.
 
 ## Example Node Classification Predictions
+To demonstrate the classification performance of the trained models, the predict.py script 
+was used to generate predictions for five nodes from the test set. The predicted classes 
+and confidence values of the MLP and GCN are compared below.
+
+| Node ID | Actual Class | MLP Prediction | MLP Confidence | GCN Prediction | GCN Confidence |
+|---|---|---|---|---|---|
+| 0 | 3 | 0 (Incorrect) | 37.28% | 3 (Correct) | 97.74% |
+| 7 | 2 | 2 (Correct) | 89.61% | 2 (Correct) | 98.71% |
+| 10 | 1 | 1 (Correct) | 96.26% | 1 (Correct) | 79.64% |
+| 18 | 1 | 1 (Correct) | 96.01% | 1 (Correct) | 99.84% |
+| 35 | 0 | 0 (Correct) | 44.20% | 0 (Correct) | 99.58% |
+
+Examining these results, it is observed that the GCN correctly classifies all five selected 
+nodes, while the MLP incorrectly classifies node 0 as class 0 instead of class 3. The GCN 
+also generally produces higher prediction confidence, particularly for nodes 0 and 35.
+
+This suggests that incorporating information from neighbouring nodes can improve 
+classification compared to using only the individual node features. However, these five 
+examples alone are not sufficient to determine the overall effectiveness of the models, 
+which is evaluated using the complete test set.
 
 ## Class Probabilities and Prediction Confidence
+The class probabilities of node 0 were examined to compare how the MLP and GCN classify the
+same Facebook page. The probabilities produced by both models are shown below.
+
+| Class | MLP Probability | GCN Probability |
+|---|---:|---:|
+| Class 0 (Television Shows) | 37.28% | 1.97% |
+| Class 1 (Governmental Organisations) | 19.73% | 0.00% |
+| Class 2 (Companies) | 8.99% | 0.29% |
+| Class 3 (Politicians) | 34.00% | 97.74% |
+| **Predicted Class** | **0 (Incorrect)** | **3 (Correct)** |
+| **Prediction Confidence** | **37.28%** | **97.74%** |
+
+Examining the probabilities, it is observed that the MLP assigns similar probabilities to 
+classes 0 and 3, with class 0 receiving the highest probability of 37.28%. This results in 
+an incorrect prediction with relatively low confidence.
+
+The GCN however assigns 97.74% probability to class 3, which is the correct category of 
+node 0. This indicates that the GCN is significantly more confident in its prediction for 
+this particular node.
+
+However, a high prediction confidence does not necessarily mean that the classification is 
+correct. To demonstrate this, node 16052 was also examined, where both models incorrectly 
+classify the node as class 2 instead of class 1.
+
+| Class | MLP Probability | GCN Probability |
+|---|---:|---:|
+| Class 0 (Television Shows) | 1.54% | 0.00% |
+| Class 1 (Governmental Organisations) | 5.56% | 0.00% |
+| Class 2 (Companies) | 91.20% | 100.00% |
+| Class 3 (Politicians) | 1.69% | 0.00% |
+| **Predicted Class** | **2 (Incorrect)** | **2 (Incorrect)** |
+| **Prediction Confidence** | **91.20%** | **100.00%** |
+
+Examining these results, it is observed that both models incorrectly classify node 16052 
+despite having high prediction confidence. The GCN is particularly overconfident, assigning 
+approximately 100% probability to the incorrect class.
+
+This demonstrates that although the GCN can achieve higher classification accuracy, it can 
+still produce highly confident incorrect predictions. This is one of the main issues 
+investigated in the confidence reliability.
 
 ## Learned Node Embeddings t-SNE
 ![GCN t-SNE Diagram](images/gcn_tsne.jpg)
