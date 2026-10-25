@@ -394,26 +394,81 @@ and GCN use the same splits, ensuring that their performance can be compared fai
 The multi-layer perceptron is a neural network model which consists of multiple layers of
 neurons. The model is made up of an input layer, hidden layer(s), and an output layer, 
 where the neurons in the MLP typically use nonlinear activation functions, allowing the
-network to learn complex patterns in data. This type of neural network can be used to 
-solve both classification and regression problems.
+network to learn complex nonlinear patterns in data. This type of neural network can be 
+used to solve both classification and regression problems.
 
 For this project the MLP was chosen as a baseline as it does not consider edge
 connections between the nodes, only the node features themselves for classification.
 This is useful as it can help evaluate whether graph connections improve classification
 and confidence reliability.
 
+The implemented MLP for this project contains two fully connected layers. The first layer 
+receives the 128-dimensional features of each Facebook page as input into its first hidden
+layer of 32 neurons and produces 32 hidden features. A ReLU activation function is then 
+applied to each neuron output, followed by dropout with a probability of 0.5. The second 
+fully connected layer converts the 32 hidden features altered by the activation function 
+and dropout, and produces four outputs corresponding to the four Facebook page categories.
+
+The four outputs are logits which represent the model's prediction scores for each class,
+where the highest score is the predicted class for the given input. These logits are used 
+to calculate the cross-entropy loss during training and are converted into class 
+probabilities using softmax during inference and evaluation.
+
+So the MLP has the following architecture:
+* One input layer (128 features)
+* One hidden layer (32 neurons) with RELU activation and 0.5 dropout
+* One ouptut layer (4 neurons)
+
 ![Multi-Layer Perceptron Diagram](images/mlp_diagram.jpg)
 
-*Figure 1: General illustration of an MLP architecture [4].*
+*Figure 1: Illustration of project MLP architecture.*
 
 ## Two-Layer Graph Convolutional Network (GCN)
+The Graph Convolutional Network (GCN) is a type of Graph Neural Network (GNN) which uses 
+both node features and graph connections to learn information about the nodes. Unlike the 
+MLP, which considers each node separately, the GCN uses information from neighbouring nodes 
+when calculating its hidden features. This allows the model to learn patterns based on both 
+the individual Facebook pages and their connections to other pages.
+
+The graph convolution operation is given by:
+$$
+H^{(l+1)}=\sigma\left(\hat{D}^{-1/2}\hat{A}\hat{D}^{-1/2}H^{(l)}W^{(l)}+b^{(l)}\right)
+$$
+
+Where:
+* $H^{(l)}$ and $H^{(l+1)}$ represent the input and output node features.
+* $\hat{A}=A+I$ is the adjacency matrix with self-connections added.
+* $\hat{D}$ is the degree matrix used to normalise the graph connections.
+* $W^{(l)}$ and $b^{(l)}$ are the learnable weights and bias.
+* $\sigma$ is the activation function.
+
+The self-connections allow each node to include its own features, while degree normalisation 
+prevents nodes with more connections from having an excessively large influence. The 
+learnable weights are updated during training to identify useful feature combinations.
+
+For this project, a two-layer GCN was implemented using the GCNConv layers provided by 
+PyTorch Geometric. The first graph convolutional layer receives the 128-dimensional node 
+features and produces 32 hidden features for each node. This layer combines the features of 
+each node with information from its directly connected neighbours. A ReLU activation 
+function and dropout with a probability of 0.5 are then applied before passing the features 
+to the second graph convolutional layer.
+
+The second graph convolutional layer receives the 32 hidden features and produces four 
+output logits corresponding to the four Facebook page categories. Because the GCN contains 
+two graph convolutional layers, information can be passed through up to two graph 
+connections, allowing each node's prediction to be influenced by its two-hop neighbourhood.
+
+So the GCN has the structure:
+* One input feature representation (128 features per node).
+* One hidden graph convolutional layer (32 features per node).
+* One output graph convolutional layer (4 features per node).
 
 ![Two-Layer GCN Diagram](images/gcn_diagram.jpg)
 
 *Figure 2: Illustration of project GCN architecture.*
 
+## Model Architectures and Hyperparameters Summary
 
-## Model Architectures and Hyperparameters
 
 ## Training Procedure and Optimisation
 
@@ -683,11 +738,6 @@ adjusted. If it offers little improvement, the MLP will remain the simpler fallb
 [2] Stanford Network Analysis Project (SNAP), “Facebook Large Page-Page Network,” Stanford University. [Online]. Available: https://snap.stanford.edu/data/facebook-large-page-page-network.html
 
 [3] PyTorch Geometric, “torch_geometric.datasets.FacebookPagePage,” PyTorch Geometric Documentation, Version 2.6.0. [Online]. Available: https://pytorch-geometric.readthedocs.io/en/2.6.0/generated/torch_geometric.datasets.FacebookPagePage.html
-
-[4] University of Nottingham, “Practical: Multi-layer perceptron,”
-Machine Learning for Image Data, FutureLearn. [Online].
-Available: https://www.futurelearn.com/info/courses/machine-learning-for-image-data/0/steps/362737
-
 
 
 
