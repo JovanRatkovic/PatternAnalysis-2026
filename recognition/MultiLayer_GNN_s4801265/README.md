@@ -540,7 +540,7 @@ connections, allowing each node's prediction to be influenced by its two-hop nei
 
 So the GCN has the structure:
 * One input feature representation (128 features per node).
-* One hidden graph convolutional layer (32 features per node).
+* One hidden graph convolutional layer (32 features per node), RELU activation, 0.5 dropout.
 * One output graph convolutional layer (4 features per node).
 
 ![Two-Layer GCN Diagram](images/gcn_diagram.jpg)
@@ -725,7 +725,7 @@ parameter updates, helping identify whether the model generalises beyond the tra
 or begins to overfit.
 
 Training and validation losses and accuracies are recorded after every epoch and used to 
-generate the corresponding performance graphs.
+generate the corresponding graphs which show the model's performance.
 
 
 ### Training Epochs and Model Checkpointing
@@ -781,7 +781,7 @@ For the MLP in Figure 3, the training loss continues to decrease throughout the 
 epochs, while the validation loss begins to increase after approximately 180 epochs. This 
 suggests that the MLP begins to overfit the training data, as it continues improving its 
 performance on the training nodes while becoming less effective on the validation nodes.
-The training loss reducing while validation increaseing widens the generalisation gap, 
+The training loss reducing while validation increasing widens the generalisation gap, 
 meaning the model becomes less generalised and overfits more to the training data as 
 training continues.
 
@@ -907,7 +907,7 @@ approximately 100% probability to the incorrect class.
 
 This demonstrates that although the GCN can achieve higher classification accuracy, it can 
 still produce highly confident incorrect predictions. This is one of the main issues 
-investigated in the confidence reliability.
+investigated in this report.
 
 ## Learned Node Embeddings t-SNE
 ![GCN t-SNE Diagram](images/gcn_tsne.jpg)
@@ -962,17 +962,68 @@ next sections.
 
 # Investigation of the Open Research Dilemma
 ## Research Question: Confidence and Ambiguity
+The main research question of this project is whether the GCN produces more reliable 
+confidence scores than the MLP when classifying Facebook pages, particularly when 
+predictions are incorrect or ambiguous.
+
+To investigate this, both models will first be compared based on their classification 
+performance to determine whether incorporating graph connections improves accuracy. Their 
+prediction confidence will then be examined using Expected Calibration Error (ECE), 
+confidence distributions and reliability diagrams to determine whether the confidence 
+scores accurately reflect the likelihood of correct classification.
+
+A confidence threshold will also be investigated to determine whether uncertain predictions 
+can be sent for manual review while maintaining high accuracy for automatically accepted 
+predictions. Finally, the computational costs and confidently incorrect predictions will be 
+examined to determine whether the additional complexity of the GCN is justified by its 
+performance.
 
 ## Quantitative Classification Benchmarking
-### Experimental Setup and Fair Comparison
+### Experimental Setup and Fair Test Comparison
+To compare the classification performance of the MLP and GCN, both models were evaluated 
+using the same test set containing 3,373 Facebook pages. The models were trained using the 
+same training and validation splits, hyperparameters and random seed, with the best 
+checkpoint for each model selected based on validation loss.
+
+The evaluation was performed using accuracy, macro-F1, per-class precision and recall, and 
+multiclass AUROC. These metrics were chosen to evaluate not only the overall classification 
+performance, but also how effectively the models classify the individual Facebook page 
+categories. This is particularly important as the dataset contains some class imbalance, 
+meaning overall accuracy alone may not provide a complete indication of model performance.
 
 ### Accuracy and Macro-F1 Comparison
+The overall test accuracy and macro-F1 results for both models are given below:
+
 | Metric | MLP | GCN |
 |---|---:|---:|
 | Test Accuracy | 80.55% | 93.30% |
 | Macro-F1 | 0.7875 | 0.9292 |
 
+Accuracy represents the proportion of test nodes correctly classified by the model. 
+Macro-F1 is the average F1 score across all four classes, where F1 combines precision and 
+recall into a single measure. Unlike accuracy, macro-F1 gives equal importance to each 
+class regardless of how many nodes belong to it, making it useful when the dataset contains 
+class imbalance.
+
+Examining the results, it is observed that the GCN achieves a test accuracy of 93.30%, 
+which is 12.75 percentage points higher than the MLP's accuracy of 80.55%. The GCN also 
+achieves a significantly higher macro-F1 score of 0.9292 compared to 0.7875 for the MLP.
+
+This indicates that the GCN is more effective at correctly classifying the Facebook pages 
+while also maintaining better performance across the individual classes. The higher 
+macro-F1 score is particularly important because it suggests that the improvement is not 
+simply caused by performing well on the classes containing the most nodes.
+
 ### Per-Class Precision and Recall
+To examine how effectively each model classifies the four Facebook page categories, the 
+precision, recall and F1 score for each class were calculated.
+
+Precision measures the proportion of predictions made for a particular class which are 
+correct, while recall measures the proportion of nodes belonging to that class which are 
+correctly identified. The F1 score combines these two measurements into a single value.
+
+The results for both models are given below:
+
 | Class | MLP Precision | MLP Recall | MLP F1 | GCN Precision | GCN Recall | GCN F1 |
 |---|---:|---:|---:|---:|---:|---:|
 | Class 0 | 0.8443 | 0.8564 | 0.8503 | 0.9356 | 0.9385 | 0.9370 |
@@ -980,13 +1031,65 @@ next sections.
 | Class 2 | 0.8106 | 0.7956 | 0.8030 | 0.9413 | 0.9446 | 0.9429 |
 | Class 3 | 0.7410 | 0.6180 | 0.6739 | 0.9207 | 0.8820 | 0.9009 |
 
+Examining the results, it is observed that the GCN outperforms the MLP in precision, recall 
+and F1 score for all four classes. This indicates that the GCN is not only more accurate 
+overall, but is also more effective at identifying the individual Facebook page categories.
+
+The largest improvement in F1 score occurs for Class 3 (Politicians), where the MLP 
+achieves an F1 score of 0.6739 compared to 0.9009 for the GCN. In particular, the recall 
+increases from 0.6180 to 0.8820, meaning that the GCN correctly identifies a significantly 
+larger proportion of the politicians in the test set.
+
+This is particularly important because Class 3 contains the least number of nodes in the 
+dataset, and so it may be more difficult for the models to classify accurately. The results 
+suggest that using graph connections provides useful additional information for 
+identifying nodes belonging to this class.
+
+Although the GCN performs significantly better across all four classes, Class 3 still has 
+the lowest recall of 0.8820, indicating that some difficulty in identifying politicians 
+remains.
 
 ### Multiclass AUROC Comparison
+The Area Under the Receiver Operating Characteristic Curve (AUROC) was also calculated to 
+evaluate how effectively the models distinguish between the four classes using their 
+predicted probabilities.
+
+For this project, multiclass AUROC was calculated using the One-vs-Rest (OvR) approach, 
+where each class is compared against the other three classes combined. The AUROC scores for 
+the four classes are then averaged to produce the macro AUROC.
+
+An AUROC score closer to 1 indicates that a model is better at ranking nodes belonging to a 
+particular class above nodes which do not belong to that class. The results are given below:
+
 | Metric | MLP | GCN |
 |---|---:|---:|
 | Macro AUROC (One-vs-Rest) | 0.9482 | 0.9880 |
 
+Examining the results, it is observed that both models achieve relatively high macro AUROC 
+scores, with the GCN achieving the highest score of 0.9880 compared to 0.9482 for the MLP.
+
+This indicates that both models are effective at distinguishing between the four Facebook 
+page categories based on their predicted probabilities, however the GCN is significantly 
+more effective. The higher AUROC score also supports the improvements observed in accuracy 
+and macro-F1.
+
 ### Classification Performance Discussion
+Overall, the quantitative classification results show that the GCN outperforms the MLP 
+across all the evaluated metrics. The GCN achieves higher test accuracy, macro-F1, 
+per-class precision and recall, and multiclass AUROC, suggesting that using graph 
+connections improves classification performance compared to using only the individual node 
+features.
+
+The improvements are particularly noticeable for Class 3 (Politicians), which the MLP has 
+the most difficulty classifying. This suggests that the additional information provided by 
+neighbouring nodes is useful for distinguishing between the Facebook page categories, 
+particularly for classes which are more difficult to identify.
+
+Based on these results, the GCN is the more effective model for classification. However, 
+higher classification accuracy does not necessarily mean that the model produces more 
+reliable confidence scores. Therefore, the confidence reliability and calibration of both 
+models must also be examined to determine whether the GCN can be trusted when automatically 
+classifying Facebook pages.
 
 ## Confidence Reliability and Calibration
 ### Confidence on Correct and Incorrect Predictions
