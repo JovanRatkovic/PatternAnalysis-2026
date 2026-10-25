@@ -548,10 +548,10 @@ The architectures of the two models are summarised by the table below:
 | Layer | MLP | GCN |
 |---|---|---|
 | Input | 128 node features | 128 node features and graph connections |
-| First Layer | Linear (128 → 32) | GCNConv (128 → 32) |
+| First Layer | Linear (128 -> 32) | GCNConv (128 -> 32) |
 | Activation Function | ReLU | ReLU |
 | Regularisation | Dropout (0.5) | Dropout (0.5) |
-| Second Layer | Linear (32 → 4) | GCNConv (32 → 4) |
+| Second Layer | Linear (32 -> 4) | GCNConv (32 -> 4) |
 | Output | Four class logits | Four class logits |
 | Trainable Parameters | 4,260 | 4,260 |
 
@@ -585,6 +585,154 @@ time to train. However, the model from the final epoch is not necessarily used f
 evaluation, as the checkpoint with the lowest validation loss is selected.
 
 ## Training Procedure and Optimisation
+The train.py script is used to train both the MLP baseline and two-layer GCN. During 
+training, the models learn the weights and biases required to classify Facebook pages by 
+comparing their predictions with the correct labels and adjusting their parameters to reduce 
+classification error. Both models follow the same training procedure, with the main 
+difference being that the GCN also uses graph connections during its forward pass.
+
+There are 7 steps done for training:
+* Step 1: Initialise the model and load the dataset
+* Step 2: Perform the forward pass
+* Step 3: Calculate the cross-entropy loss
+* Step 4: Calculate gradients using backpropagation
+* Step 5: Update the model parameters using Adam
+* Step 6: Evaluate training and validation performance
+* Step 7: Repeat training and save the best model
+
+### Model Initialisation and Dataset Loading
+The script first sets the random seed to 42 for reproducibility and selects a 
+CUDA-compatible GPU if available, otherwise the CPU. The dataset is loaded using 
+load_dataset() from dataset.py, which creates the reproducible training, validation and test 
+splits and standardises the node features using training-set statistics.
+
+The selected MLP or GCN is then initialised using the hyperparameters above, along with 
+the cross-entropy loss function and Adam optimiser with a learning rate of 0.01.
+
+### Forward Pass
+During each epoch, the model performs a forward pass to produce predictions for all 22,470 
+nodes.
+
+The MLP processes the 128-dimensional node features through two fully connected layers, 
+while the GCN also uses the graph connections through two graph convolutional layers. Both 
+produce an output matrix of dimensions (22,470 × 4), containing four class logits for each 
+node.
+
+Although predictions are generated for all nodes, the training loss is only calculated using
+the 15,727 training nodes selected by train_mask.
+
+For the GCN, this follows transductive semi-supervised learning, where the features and 
+graph connections of all nodes can be used during training, but validation and test labels 
+are excluded from the training loss.
+
+### Cross-Entropy Loss
+Cross-entropy loss measures how well the model's predicted probabilities correspond to the 
+correct class labels. It is suitable for this project because each Facebook page belongs to 
+one of four classes.
+
+The four output logits can be converted into class probabilities using the softmax function:
+```math
+p_{i,c}=\frac{e^{z_{i,c}}}{\sum_{j=0}^{3}e^{z_{i,j}}}
+```
+Where:
+* $z_{i,c}$ is the output logit for class $c$ of node $i$.
+* $p_{i,c}$ is the predicted probability of node $i$ belonging to class $c$.
+* The denominator ensures that the four class probabilities sum to 1.
+
+The average cross-entropy loss is then calculated using:
+```math
+L=-\frac{1}{N}\sum_{i=1}^{N}\log(p_{i,y_i})
+```
+Where:
+* $L$ is the average cross-entropy loss.
+* $N$ is the number of training nodes (15,727).
+* $y_i$ is the correct class label for node $i$.
+* $p_{i,y_i}$ is the probability assigned to the correct class.
+
+The loss is smaller when the model assigns a high probability to the correct class and 
+larger when it assigns a low probability.
+
+The script uses PyTorch's nn.CrossEntropyLoss(), which calculates the loss directly from the 
+logits using an internal log-softmax operation. Therefore, softmax does not need to be 
+applied separately during training.
+
+### Backpropagation
+Once the loss is calculated, backpropagation determines how each learnable weight and bias 
+contributes to the loss by calculating its gradient:
+```math
+\frac{\partial L}{\partial\theta}
+```
+Where:
+* $L$ is the cross-entropy loss.
+* $\theta$ represents a learnable weight or bias.
+
+The gradient describes how the loss changes as the parameter changes.
+
+The script uses loss.backward() to calculate these gradients through the model using the 
+chain rule. The gradients indicate how the parameters should be adjusted to reduce the loss.
+
+Before each backward pass, optimizer.zero_grad() clears the gradients from the previous 
+epoch, preventing unwanted gradient accumulation.
+
+### Parameter Optimisation Using Adam
+The Adam optimiser uses the calculated gradients to update the model's weights and biases, 
+with the aim of reducing the cross-entropy loss over successive epochs.
+
+The basic principle of gradient descent can be represented by:
+```math
+\theta_{t+1}=\theta_t-\eta\frac{\partial L}{\partial\theta_t}
+```
+Where:
+* $\theta_t$ and $\theta_{t+1}$ are the parameter values before and after the update.
+* $\eta$ is the learning rate (0.01).
+* $\frac{\partial L}{\partial\theta_t}$ is the gradient of the loss with respect to the parameter.
+
+The learning rate controls the size of the parameter updates. A large learning rate may 
+cause unstable training, while a very small learning rate may slow convergence.
+
+For this project, Adam is used instead of basic gradient descent. Adam maintains moving 
+averages of gradients and squared gradients to adapt parameter updates, which can improve 
+training efficiency and stability.
+
+The updates are performed using optimizer.step() after backpropagation.
+
+### Training and Validation Evaluation
+After each parameter update, the model is evaluated on the training and validation sets 
+using the evaluate() function.
+
+The script uses model.eval() to disable dropout and torch.no_grad() to prevent gradient 
+calculations. Cross-entropy loss and classification accuracy are then calculated separately 
+for each set.
+
+The predicted class is determined by selecting the highest output logit, and accuracy is 
+calculated using:
+```math
+\text{Accuracy}=\frac{\text{Number of Correct Predictions}}{\text{Total Number of Predictions}}
+```
+
+The validation set is used to measure performance on nodes whose labels were not used for 
+parameter updates, helping identify whether the model generalises beyond the training data 
+or begins to overfit.
+
+Training and validation losses and accuracies are recorded after every epoch and used to 
+generate the corresponding performance graphs.
+
+
+### Training Epochs and Model Checkpointing
+Steps 2–6 are repeated for 1000 epochs, with each epoch performing one parameter update 
+using the entire set of 15,727 training nodes.
+
+After each epoch, the validation loss is compared with the lowest previously recorded value. 
+If it improves, the model's parameters are saved to mlp_best.pt or gcn_best.pt.
+
+Training continues for all 1000 epochs without early stopping. However, the checkpoint with 
+the lowest validation loss is selected rather than automatically using the parameters from 
+the final epoch.
+
+After training, the best checkpoint is loaded and used for the final test-set evaluation, 
+confidence analysis and other performance measurements.
+
+
 
 ## Validation and Best Model Selection
 | Metric | MLP | GCN |
