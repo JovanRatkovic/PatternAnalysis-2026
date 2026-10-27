@@ -1093,10 +1093,34 @@ classifying Facebook pages.
 
 ## Confidence Reliability and Calibration
 ### Confidence on Correct and Incorrect Predictions
+To investigate whether the MLP and GCN produce reliable confidence scores, the prediction 
+confidence was compared between correctly and incorrectly classified nodes in the test set. 
+Prediction confidence is calculated as the highest softmax probability produced by the 
+model, representing how confident the model is in its selected class.
+
+A model with reliable confidence scores should generally produce higher confidence for 
+correct predictions and lower confidence for incorrect predictions. This is important 
+because incorrect predictions made with high confidence may be automatically accepted 
+without being identified for further review.
+
+The mean confidence values for both models are given below:
+
 | Metric | MLP | GCN |
 |---|---:|---:|
 | Mean Confidence (Correct Predictions) | 83.40% | 94.84% |
 | Mean Confidence (Incorrect Predictions) | 57.41% | 74.14% |
+
+Examining the results, it is observed that both models produce higher average confidence 
+for correct predictions than incorrect predictions. The MLP achieves a mean confidence of 
+83.40% for correct predictions compared to 57.41% for incorrect predictions, while the GCN 
+achieves 94.84% for correct predictions and 74.14% for incorrect predictions.
+
+Although the GCN is more confident when its predictions are correct, it also produces 
+higher confidence when its predictions are incorrect. This indicates that the GCN's higher 
+classification accuracy does not necessarily mean that its incorrect predictions are 
+assigned low confidence.
+
+The confidence distributions for both models are shown in Figures 10 and 11.
 
 ![MLP Confidence Distribution](images/mlp_confidence.jpg)
 
@@ -1106,13 +1130,81 @@ classifying Facebook pages.
 
 *Figure 11: Distribution of GCN prediction confidence for correctly and incorrectly classified test nodes.*
 
+Examining Figure 10, it is observed that the MLP produces a wider distribution of 
+confidence values for both correct and incorrect predictions. Most incorrect predictions 
+are concentrated around confidence values of 0.3 to 0.6, although some incorrect 
+predictions still occur at high confidence values close to 1.0. It is seen however that the
+MLP generally is lower in confidence for incorrect predictions, but high for correct.
+
+For the GCN in Figure 11, the majority of correct predictions are concentrated at 
+confidence values close to 1.0, indicating that the model is highly confident for most 
+correctly classified nodes. However, incorrect predictions are also high in confidence 
+closer to 1.0 with a peak at around 1.0. This indicates that although the GCN is a lot more
+confident in its correct predictions, a large portion of incorrect predictions are also 
+predicted with high confidence.
+
+This suggests that prediction confidence can provide useful information for identifying 
+potentially incorrect classifications, as incorrect predictions generally have lower 
+confidence. However, the overlap between correct and incorrect predictions means that 
+confidence alone cannot reliably identify every classification error.
+
 ### Expected Calibration Error (ECE)
+To further investigate confidence reliability, the Expected Calibration Error (ECE) was 
+calculated for both models. ECE measures how closely a model's prediction confidence 
+corresponds to its actual classification accuracy.
+
+For example, if a model makes predictions with an average confidence of 80%, approximately 
+80% of these predictions should be correct for the model to be well calibrated.
+
+ECE is calculated by dividing predictions into confidence intervals, comparing the average 
+confidence with the actual accuracy within each interval, and calculating a weighted 
+average of the differences.
+
+The ECE can be represented by:
+
+```math
+ECE = \sum_{m=1}^{M} \frac{|B_m|}{N} \left| acc(B_m) - conf(B_m) \right|
+```
+
+Where:
+* $M$ is the number of confidence intervals, which is 10 for this project.
+* $B_m$ represents the predictions belonging to confidence interval $m$.
+* $|B_m|$ is the number of predictions in the interval.
+* $N$ is the total number of predictions.
+* $acc(B_m)$ is the actual classification accuracy within the interval.
+* $conf(B_m)$ is the average prediction confidence within the interval.
+
+A lower ECE indicates that the model's confidence scores are more closely aligned with its 
+actual accuracy, with a value of zero representing perfect calibration under the chosen 
+intervals.
+
+The ECE results are given below:
+
 | Metric | MLP | GCN |
 |---|---:|---:|
 | Expected Calibration Error (ECE) | 0.0427 | 0.0146 |
 
+Examining the results, it is observed that the GCN achieves a significantly lower ECE of 
+0.0146 compared to 0.0427 for the MLP. This indicates that the GCN's confidence scores are 
+generally better calibrated and correspond more closely to its observed classification 
+accuracy.
+
+However, ECE represents an average calibration error across the test set, meaning that a 
+low ECE does not guarantee that every individual prediction has reliable confidence. A 
+model can still produce highly confident incorrect predictions even when its overall 
+calibration is good, as seen by Figure 11 above.
 
 ### Reliability Diagrams and Calibration Analysis
+Reliability diagrams were also generated to visually examine how closely the confidence 
+scores correspond to actual classification accuracy. These diagrams compare the average 
+prediction confidence with the observed accuracy for groups of predictions.
+
+The dashed diagonal line represents perfect calibration, where the average prediction 
+confidence is equal to the actual accuracy. Points above the diagonal indicate that the 
+model is underconfident, as its actual accuracy is higher than its confidence. Points below 
+the diagonal indicate overconfidence, where the model's confidence is higher than its 
+actual accuracy.
+
 ![MLP Reliability Diagram](images/mlp_reliability.jpg)
 
 *Figure 12: MLP reliability diagram comparing average prediction confidence with observed classification accuracy.*
@@ -1121,14 +1213,71 @@ classifying Facebook pages.
 
 *Figure 13: GCN reliability diagram comparing average prediction confidence with observed classification accuracy.*
 
+Examining Figure 12, it is observed that the MLP's reliability curve is generally above the 
+perfect calibration line across most confidence intervals. This indicates that the MLP is 
+generally underconfident, as its observed classification accuracy is higher than its 
+average prediction confidence. However, at the highest confidence interval, the curve falls 
+slightly below the diagonal, indicating some overconfidence.
+
+For the GCN in Figure 13, the reliability curve is generally closer to the perfect 
+calibration line, particularly for the higher confidence intervals. This supports the lower 
+ECE achieved by the GCN and indicates that its confidence scores better represent 
+its actual classification accuracy.
+
+However, the GCN also shows some deviations from perfect calibration, including 
+underconfidence in several intermediate confidence intervals and slight overconfidence at 
+the highest confidence interval.
+
+Overall, the reliability diagrams support the ECE results, indicating that the GCN produces 
+better calibrated confidence scores than the MLP. However, neither model is perfectly 
+calibrated, and both can still produce confident incorrect predictions.
+
 ### Overconfidence and Ambiguous Predictions
+Although the GCN achieves better classification performance and a lower ECE, this does not 
+mean that it avoids overconfidence on individual predictions.
+
+As demonstrated earlier, node 16052 belongs to Class 1 (Governmental Organisations), but 
+both models incorrectly classify it as Class 2 (Companies). The MLP produces a confidence 
+of 91.20%, while the GCN produces a confidence of approximately 100%, despite both 
+predictions being incorrect.
+
+This is important because the GCN is more confident in the incorrect 
+classification than the MLP, even though it achieves better overall accuracy and 
+calibration across the test set.
+
+The overlapping confidence distributions in Figures 10 and 11 also indicate that incorrect 
+predictions are not always associated with low confidence. While some incorrect 
+classifications may occur because the model is uncertain between multiple classes, others 
+are made with very high confidence.
+
+These results demonstrate that although the GCN produces more reliable confidence scores 
+overall, it can still be overconfident on individual incorrect predictions. Therefore, a 
+confidence threshold will be investigated to determine whether uncertain predictions can be 
+identified for manual review, while reducing the number of classifications that need to be 
+checked manually.
 
 ## Confidence Threshold and Manual Review
 ### Confidence Threshold Selection
-There needs to be a balance between workout and prediction accuracy.
+To reduce the risk of automatically accepting incorrect classifications, a confidence 
+threshold is used. Predictions with confidence equal to or above the selected 
+threshold are automatically accepted, while predictions below the threshold are sent for 
+manual review.
 
-for GCN target accuracy: 0.95
-for 
+The purpose is to achieve high accuracy for automatically accepted predictions while 
+keeping the number of predictions requiring manual review as low as possible. This means 
+there needs to be a good balance between classification accuracy and manual review 
+workload, as increasing the confidence threshold generally improves the reliability of 
+accepted predictions but also increases the number of pages which require manual review.
+
+For this project, a target accepted prediction accuracy of 95% was chosen. The confidence 
+threshold was selected using the validation set rather than the test set, to prevent the 
+final test results from influencing the selection.
+
+The script evaluates confidence thresholds from 0.50 to 0.99 in increments of 0.01 and 
+selects the first threshold which achieves at least 95% accuracy among the automatically 
+accepted validation predictions.
+
+The selected thresholds and validation results are given below:
 
 | Metric | MLP | GCN |
 |---|---:|---:|
@@ -1136,22 +1285,88 @@ for
 | Selected Confidence Threshold | 0.86 | 0.56 |
 | Validation Accepted Accuracy | 95.36% | 95.02% |
 
+Examining the results, it is observed that the MLP requires a confidence threshold of 0.86 
+to achieve the target accuracy, while the GCN only requires a threshold of 0.56.
+
+This indicates that the GCN can accept predictions with lower confidence while still 
+achieving the desired accuracy on the validation set. In comparison, the MLP requires much 
+higher confidence before a prediction can be automatically accepted.
+
+Both models achieve the target validation accuracy, with the MLP reaching 95.36% and the 
+GCN reaching 95.02%. These thresholds were then applied to the test set to evaluate how 
+effectively they generalise to the final classification results.
 
 ### Automatically Accepted Prediction Accuracy
+After selecting the confidence thresholds using the validation set, these thresholds were 
+applied to the test set. The accuracy was calculated using only the predictions which were 
+automatically accepted, allowing the performance of the confidence-based filtering system 
+to be evaluated.
+
+The results are given below:
+
 | Metric | MLP | GCN |
 |---|---:|---:|
 | Overall Test Accuracy | 80.55% | 93.30% |
 | Accepted Test Prediction Accuracy | 95.73% | 94.51% |
 
+Examining the results, it is observed that both models achieve a higher accepted prediction 
+accuracy compared to their original test accuracy.
+
+For the MLP, the accuracy increases from 80.55% to 95.73%, meaning that the confidence 
+threshold is able to successfully filter the data to give predictions with much larger
+accuracy.
+
+For the GCN, the accuracy increases from 93.30% to 94.51%. Although this is an improvement, 
+the accepted prediction accuracy does not reach the original target of 95% on the test set, 
+despite achieving 95.02% on the validation set.
+
+This indicates that the threshold selected using the validation set does not perfectly 
+generalise to the test set. The difference is relatively small, but it demonstrates that 
+achieving a target accuracy on validation data does not guarantee that the same accuracy 
+will be achieved on unseen test data.
+
+Examining the MLP, it is seen that it achieves a slightly higher accepted test prediction 
+accuracy than the GCN, despite having significantly lower overall test accuracy. However,
+the number of predictions each model sends for manual review must also be considered.
 
 ### Manual Review Workload
+Although higher confidence thresholds can improve the accuracy of automatically accepted 
+predictions, they can also increase the number of predictions requiring manual review.
+
+To evaluate this, the percentage of automatically accepted predictions and the percentage 
+sent for manual review were calculated for both models using their selected thresholds.
+
+The results are given below:
+
 | Metric | MLP | GCN |
 |---|---:|---:|
 | Automatically Accepted Predictions | 48.65% | 97.15% |
 | Predictions Sent for Manual Review | 51.35% | 2.85% |
 
+Examining the results, it is observed that the MLP automatically accepts only 48.65% of the 
+test predictions, meaning that 51.35% must be sent for manual review to achieve an 
+accepted prediction accuracy of 95.73%.
+
+Examining the GCN however, it is seen that it automatically accepts 97.15% of the 
+predictions, with only 2.85% requiring manual review. This is a significant reduction in 
+manual review workload compared to the MLP.
+
+This indicates that the GCN is more suitable for automatic classification, as it can 
+classify the majority of Facebook pages without requiring manual review while still 
+maintaining relatively high accuracy.
+
+So despite the MLP having slightly more test accuracy, the GCN requires significantly less
+manual review for a similar accuracy result.
 
 ### Accuracy–Workload Trade-off
+To further investigate the relationship between accepted prediction accuracy and manual 
+review workload, the confidence threshold was varied and the resulting accuracy and review 
+percentage were plotted.
+
+These graphs show how the accuracy of automatically accepted predictions changes as more 
+uncertain predictions are excluded and sent for manual review. The selected 
+validation-based thresholds are also marked on the graphs.
+
 ![MLP Manual Review Trade-off](images/mlp_manual_review.jpg)
 
 *Figure 14: MLP trade-off between automatically accepted prediction accuracy and the percentage of test nodes sent for manual review.*
@@ -1159,6 +1374,38 @@ for
 ![GCN Manual Review Trade-off](images/gcn_manual_review.jpg)
 
 *Figure 15: GCN trade-off between automatically accepted prediction accuracy and the percentage of test nodes sent for manual review.*
+
+Examining Figures 14 and 15, it is observed that both models generally achieve higher 
+accepted prediction accuracy as the percentage of nodes sent for manual review increases. 
+This occurs because increasing the confidence threshold removes more low-confidence 
+predictions from automatic classification, which tend to be incorrect.
+
+For the MLP in Figure 14, the accepted prediction accuracy increases steadily as more nodes 
+are sent for manual review. To achieve an accuracy above 95%, approximately half of the 
+test predictions must be excluded from automatic classification. This indicates that the 
+MLP requires a relatively large manual review workload to achieve high accepted prediction 
+accuracy.
+
+For the GCN in Figure 15, the accepted prediction accuracy begins at 93.30% when no nodes 
+are sent for manual review, which is already significantly higher than the MLP's initial 
+accuracy of 80.55%. The accuracy then increases as more nodes are reviewed, reaching 
+approximately 95% when around 4% of the test predictions are sent for manual review.
+
+The selected GCN threshold of 0.56 sends only 2.85% of predictions for manual review and 
+achieves an accepted prediction accuracy of 94.51%. Although this is slightly below the 
+target, Figure 15 shows that a higher threshold could improve accepted accuracy at the 
+cost of a larger manual review workload.
+
+Overall, the results show that the GCN provides a significantly better balance between 
+automatic classification accuracy and manual review workload than the MLP. Although neither 
+model can guarantee that all incorrect predictions will be identified using confidence 
+alone, the GCN can automatically classify a much larger proportion of the test nodes while 
+maintaining high accuracy.
+
+This suggests that incorporating graph connections improves not only classification 
+performance but also the practicality of using confidence thresholds to reduce manual 
+classification workload. However, the highly confident incorrect predictions 
+demonstrate that further investigation of individual failure cases is still important.
 
 ## Computational Resource Profiling
 ### Model Parameter Count
