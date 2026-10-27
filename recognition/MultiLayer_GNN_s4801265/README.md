@@ -99,6 +99,10 @@ consists of the five mandatory files:
 - predict.py
 - README.md
 
+And these other two helper files:
+- convert_dataset.py
+- inspect_node.py
+
 ### Files Produced From Running Training
 Training produces the following files for the MLP:
 - gcn_best.pt
@@ -125,7 +129,7 @@ The code prints test accuracy, macro-F1, multiclass AUROC, per-class precision/r
 ECE, inference time, parameter count, GPU memory and failure-case information to the
 terminal. When running on the Rangpur cluster these are saved in the resulting .out file.
 
-## Installation Instructions
+## Dataset Installation and Conversion Instructions
 The project requires Python 3.10 and the libraries listed in the Software 
 Dependencies and Versions section.
 A Python virtual environment can be created and activated using:
@@ -146,10 +150,25 @@ The Facebook Page-Page Network dataset was obtained from:
 
 https://github.com/gayanku/facebook_page-page_dataset/tree/main
 
+Here the dataset is called:
+```bash
+facebook.npz
+```
 The facebook.npz file must be downloaded and converted into the format expected by 
-the PyTorch Geometric dataset loader before running the project.
+the PyTorch Geometric dataset loader before running the project. Here are the steps:
+* Step 1: Create a folder called "raw" in the PatternAnalysis-2026/recognition/
+MultiLayer_GNN_s4801265 directory and paste the downloaded "facebook.npz" file inside it
+* Step 2: The downloaded dataset uses different array names from those expected by the 
+PyTorch Geometric FacebookPagePage loader, so the dataset must first be converted using 
+convert_dataset.py. Do this by running:
+```bash
+python convert_dataset.py
+```
+* Step 3: Dataset is now ready for training and can now be loaded by doing
+```bash
+python dataset.py
+```
 
-...
 
 ## Reproducability and Random Seeds
 A fixed random seed of 42 is used throughout the project to improve reproducibility. 

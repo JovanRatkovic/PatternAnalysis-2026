@@ -157,7 +157,7 @@ def verify_dataset(data):
     print("\nDataset verification successful.")
 
 
-def load_dataset(root="data/FacebookPagePage", seed=42):
+def load_dataset(root=None, seed=42):
     """
     Load and preprocess the Facebook Page-Page dataset.
 
@@ -168,7 +168,11 @@ def load_dataset(root="data/FacebookPagePage", seed=42):
     Returns:
         Graph with node features, labels and data splits.
     """
-    dataset = FacebookPagePage(root=root)
+    if root is None:
+        from pathlib import Path
+        root = Path(__file__).resolve().parent
+
+    dataset = FacebookPagePage(root=str(root))
 
     # The dataset contains one graph
     data = dataset[0]
