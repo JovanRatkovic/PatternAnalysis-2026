@@ -52,6 +52,8 @@ improves classification performance and confidence reliability. A confidence thr
 will also be evaluated to investigate whether uncertain predictions can be identified 
 for manual review.
 
+Feasability review is at bottom of report.
+
 # Dependencies and Reproducability
 ## Software Dependencies and Versions
 This project is implemented in Python using PyTorch and PyTorch Geometric.
@@ -380,7 +382,7 @@ without using validation or test labels during training.
 Validation labels are used to select the best model checkpoint and confidence threshold, 
 while test labels are reserved for final evaluation. This prevents test information from 
 influencing model selection, which could otherwise produce overly optimistic results. 
-Furthermore, the training, validation and test masks are verified to be non-overlapping, 
+The training, validation and test masks are also verified to be non-overlapping, 
 and both models use identical splits to ensure a fair comparison.
 
 # Model Implementation and Training
@@ -575,7 +577,7 @@ hidden feature dimension of 32, learning rate of 0.01 and dropout probability of
 selected based on the GCN configuration used by Rozemberczki et al. [1].
 
 The maximum number of training epochs was increased to 1000 to allow both models sufficient 
-time to train. However, the model from the final epoch is not necessarily used for 
+time to train. However, the model from the final epoch is not used for 
 evaluation, as the checkpoint with the lowest validation loss is selected.
 
 ## Training Procedure and Optimisation
@@ -723,9 +725,9 @@ the lowest validation loss is selected rather than automatically using the param
 the final epoch.
 
 After training, the best checkpoint is loaded and used for the final test set evaluation 
-andother evaluations used in this report.
+and other evaluations used in this report.
 
-## Validation and Best Model Selection
+## Validation and Best Model Selection Results
 | Metric | MLP | GCN |
 |---|---:|---:|
 | Maximum Training Epochs | 1000 | 1000 |
@@ -879,7 +881,7 @@ classify the node as class 2 instead of class 1.
 | **Prediction Confidence** | **91.20%** | **100.00%** |
 
 Examining these results, it is observed that both models incorrectly classify node 16052 
-despite having high prediction confidence. The GCN is particularly overconfident, assigning 
+despite having high prediction confidence. The GCN is very overconfident, assigning 
 approximately 100% probability to the incorrect class.
 
 This demonstrates that although the GCN can achieve higher classification accuracy, it can 
@@ -1537,7 +1539,7 @@ The mean cosine similarity to direct neighbours is only 0.0548, indicating low a
 feature similarity. Despite this and the misleading two-hop neighbourhood, the GCN 
 correctly classifies the node, most likely due to the cosine similarity being really low, 
 but also the influence of the majority correct class direct neighbours. Despite correct 
-prediction it is seen that the GCN has lower confidence and so the two hop 
+prediction it is seen that the GCN has lower than 90% confidence and so the two hop 
 neighbourhood does reduce this confidence in its prediction.
 
 This demonstrates that the GCN does not simply predict the most common neighbouring class in
@@ -1665,7 +1667,7 @@ for the following tasks:
 me the code for these models.
 - Teaching me the key mathematical concepts required for each model and giving the equations
 I could use in the report
-- Helping to fix incorrect dataset formatting from downloaded link by giving conversion file
+- Helping to fix incorrect dataset formatting from download link by giving conversion file
 so data can be used by PyTorch Geometric
 - Generating images of the MLP and GCN model structures which were decided to be used for 
 this report
@@ -1689,10 +1691,11 @@ line and use the prompt:
 "For this code: (code) explain every line and what its purpose is."
 
 Secondly I would test and train the models repeatedly and check that every required statistic
-and plot is used and printed. Then I would look over all the statistic and check whether they
-realistically match up to what is expected for that metric. For the plots aswell I would 
-compare them to ones found online for similar models to ensure they correctly represent
-the data. Mathematical concepts were also checked online to verify they are correct.
+and plot is used and printed. Then I would look over all the statistics and check whether 
+they realistically match up to what is expected for that metric. For the plots aswell I 
+would compare them to ones found online for similar models to ensure they correctly 
+represent the data. Mathematical concepts were also checked online to verify they are 
+correct.
 
 Any incorrect code, explanation, or functionality resulting from halluciations were 
 identified and removed. 
