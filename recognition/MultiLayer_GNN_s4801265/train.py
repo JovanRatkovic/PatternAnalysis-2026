@@ -43,12 +43,24 @@ def model_forward(model, data):
     return model(data.x)
 
 def train_epoch(model, data, optimizer, criterion):
+    """
+    Train the selected model for one epoch.
+
+    Args:
+        model: MLP or GCN model.
+        data: Graph containing node features, labels and masks.
+        optimizer: Optimiser used to update model parameters.
+        criterion: Loss function used during training.
+
+    Returns:
+        Training cross-entropy loss for the epoch.
+    """
     model.train()
 
     # Clear gradients from previous epoch
     optimizer.zero_grad()
 
-    # Predict classes for all nodes
+    # Generate logits for all nodes
     output = model_forward(model, data)
 
     # Calculate loss using training labels only
@@ -67,6 +79,18 @@ def train_epoch(model, data, optimizer, criterion):
 
 
 def evaluate(model, data, mask, criterion):
+    """
+    Evaluate model loss and accuracy on a selected data split.
+
+    Args:
+        model: Trained MLP or GCN model.
+        data: Graph containing node features and labels.
+        mask: Boolean mask selecting the nodes to evaluate.
+        criterion: Loss function used for evaluation.
+
+    Returns:
+        Tuple containing cross-entropy loss and classification accuracy.
+    """
     model.eval()
 
     with torch.no_grad():
@@ -87,6 +111,21 @@ def evaluate(model, data, mask, criterion):
 
 
 def evaluate_test_set(model, data, model_name):
+    """
+    Evaluate classification performance on the test set.
+
+    Calculates accuracy, macro-F1, per-class precision, recall,
+    F1 score, multiclass AUROC and the confusion matrix.
+    Saves test predictions and class probabilities to a CSV file.
+
+    Args:
+        model: Trained MLP or GCN model.
+        data: Graph containing node features, labels and test mask.
+        model_name: Name of the model used for output filenames.
+
+    Returns:
+        None
+    """
     model.eval()
 
     with torch.no_grad():
@@ -203,6 +242,7 @@ def plot_training_results(training_losses, validation_losses,
         validation_losses: Validation loss for each epoch.
         training_accuracies: Training accuracy for each epoch.
         validation_accuracies: Validation accuracy for each epoch.
+        model_name: Name of the model used for plot titles and filenames.
 
     Returns:
         None
@@ -528,7 +568,7 @@ def select_confidence_threshold(
     Select a confidence threshold using validation data.
 
     Args:
-        model: Trained MLP.
+        model: Trained MLP or GCN model.
         data: Graph containing validation features and labels.
         target_accuracy: Minimum desired accuracy for accepted nodes.
 
@@ -583,7 +623,7 @@ def analyse_confidence(model, data, mask, threshold, split_name):
     for a selected data split.
 
     Args:
-        model: Trained MLP.
+        model: Trained MLP or GCN model.
         data: Graph containing features and labels.
         mask: Boolean mask for the selected split.
         threshold: Confidence threshold selected on validation data.
@@ -657,10 +697,11 @@ def analyse_confidence(model, data, mask, threshold, split_name):
 
 def measure_resources(model, data, device):
     """
-    Measure model parameters, inference time and peak GPU memory.
+    Measure model parameters, inference time and peak GPU memory
+    during inference.
 
     Args:
-        model: Trained MLP.
+        model: Trained MLP or GCN model.
         data: Graph containing node features.
         device: CPU or GPU device.
 
@@ -723,10 +764,10 @@ def measure_resources(model, data, device):
 
 def analyse_failures(model, data, num_examples=5):
     """
-    Identify confidently incorrect test-node predictions.
+    Identify high confidence incorrect test-node predictions.
 
     Args:
-        model: Trained MLP.
+        model: Trained MLP or GCN model.
         data: Graph containing node features and test labels.
         num_examples: Number of failures to display.
 
@@ -778,7 +819,17 @@ def analyse_failures(model, data, num_examples=5):
 
 
 def main():
+    """
+    Run the complete training and evaluation pipeline.
 
+    Loads the dataset, initialises and trains the selected model,
+    saves the best checkpoint based on validation loss, and
+    performs test evaluation, confidence analysis, resource
+    measurements, failure analysis and visualisations.
+
+    Returns:
+        None
+    """
     # Select which model to train
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -849,10 +900,10 @@ def main():
     training_accuracies = []
     validation_accuracies = []
 
-    # Train the MLP baseline
+    # Train the selected model
     for epoch in range(1, epochs + 1):
 
-        # Train the MLP for one epoch
+        # Train the selected model for one epoch
         train_epoch(model, data, optimizer, criterion)
 
         # Evaluate training performance
@@ -879,13 +930,6 @@ def main():
             best_epoch = epoch
 
             torch.save(model.state_dict(), best_model_path)
-
-            """
-            print(
-                f"Best model saved. "
-                f"Validation Loss: {best_val_loss:.4f}"
-            )
-            """
 
         print(
             f"Epoch {epoch:03d} | "

@@ -61,7 +61,15 @@ for source, target in data.edge_index.t().tolist():
 
 
 def get_distribution(node_ids):
-    """Return the ground-truth class distribution."""
+    """
+    Count the ground-truth classes of selected nodes.
+
+    Args:
+        node_ids: List of node IDs to analyse.
+
+    Returns:
+        Counter containing the number of nodes in each class.
+    """
     labels = [
         int(data.y[node].item())
         for node in node_ids
@@ -70,6 +78,16 @@ def get_distribution(node_ids):
 
 
 def print_distribution(distribution, total):
+    """
+    Print the class distribution as counts and percentages.
+
+    Args:
+        distribution: Number of nodes belonging to each class.
+        total: Total number of nodes in the distribution.
+
+    Returns:
+        None
+    """
     for class_id in range(4):
         count = distribution.get(class_id, 0)
         percentage = (
@@ -84,6 +102,18 @@ def print_distribution(distribution, total):
 
 
 def inspect_node(node_id):
+    """
+    Analyse a selected node and its surrounding graph structure.
+
+    Compares MLP and GCN predictions, direct and two-hop
+    neighbour class distributions, and node feature similarity.
+
+    Args:
+        node_id: ID of the node to analyse.
+
+    Returns:
+        None
+    """
     true_class = int(data.y[node_id].item())
 
     neighbours = sorted(adjacency[node_id])
