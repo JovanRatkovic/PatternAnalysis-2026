@@ -24,7 +24,7 @@ when compared to the simpler MLP baseline.
 Graph-based classification can benefit from using both the features of individual nodes 
 and the connections between them. Rozemberczki et al. [1] investigated attributed node 
 embeddings, where information from a node and its neighbouring nodes is used to learn 
-useful representations. By incorporating information from neighbouring nodes (nodes that 
+useful representations. By using information from neighbouring nodes (nodes that 
 are connected through edges in the graph), their research investigated whether patterns in 
 the surrounding network could provide additional information that improves node 
 classification.
@@ -52,10 +52,6 @@ improves classification performance and confidence reliability. A confidence thr
 will also be evaluated to investigate whether uncertain predictions can be identified 
 for manual review.
 
-## The Proposed Solution
-
-## How the Algorithm Works
-
 # Dependencies and Reproducability
 ## Software Dependencies and Versions
 This project is implemented in Python using PyTorch and PyTorch Geometric.
@@ -82,13 +78,12 @@ The project also uses standard Python libraries including argparse, csv and time
 These are included with Python and do not require separate installation.
 
 ## Hardware and Computing Environment
-The project is developed locally using Ubuntu through Windows Subsystem for Linux 
-(WSL). A Python virtual environment named gnn_env is used to manage the project
+The project was developed locally using Ubuntu through Windows Subsystem for Linux 
+(WSL). A Python virtual environment named gnn_env was used to manage the project
 dependencies.
 
 Model training and evaluation can be performed using either a CPU or a CUDA-compatible
-GPU, depending on availability. The training script automatically selects CUDA when 
-supported, otherwise it uses the CPU.
+GPU. The training code automatically selects CUDA if available, otherwise uses the CPU.
 
 ## Project File Structure
 The project is contained in the recognition/MultiLayer_GNN_s4801265/ directory and
@@ -100,11 +95,11 @@ consists of the five mandatory files:
 - README.md
 
 And these other two helper files:
-- convert_dataset.py
-- inspect_node.py
+- convert_dataset.py: Used for converting dataset to correct form
+- inspect_node.py: Used for analysing failure case nodes
 
 ### Files Produced From Running Training
-Training produces the following files for the MLP:
+Training produces the following files for the GCN:
 - gcn_best.pt
 - gcn_predictions.csv 
 - gcn_accuracy.png 
@@ -115,7 +110,7 @@ Training produces the following files for the MLP:
 - gcn_reliability.png 
 - gcn_tsne.png 
 
-And the following for the GCN:
+And the following for the MLP:
 - mlp_best.pt
 - mlp_predictions.csv
 - mlp_accuracy.png 
@@ -143,9 +138,6 @@ python -m pip install torch
 python -m pip install torch-geometric
 python -m pip install numpy scikit-learn matplotlib
 ```
-For GPU execution, a CUDA-compatible PyTorch installation is required. The appropriate
-installation command depends on the CUDA support available on the system.
-
 The Facebook Page-Page Network dataset was obtained from:
 
 https://github.com/gayanku/facebook_page-page_dataset/tree/main
@@ -164,32 +156,18 @@ convert_dataset.py. Do this by running:
 ```bash
 python convert_dataset.py
 ```
-* Step 3: Dataset is now ready for training and can now be loaded by doing
+* Step 3: Dataset is now ready for training and can now be loaded by doing:
 ```bash
 python dataset.py
 ```
-
+NOTE: convert_dataset.py should only be run once, not every time the models are being 
+trained or used for prediction.
 
 ## Reproducability and Random Seeds
-A fixed random seed of 42 is used throughout the project to improve reproducibility. 
-This ensures that the dataset is divided into the same training, validation and test 
-sets each time the code is executed, allowing both the MLP and GCN to be evaluated 
-using identical data splits.
-
-The dataset is divided using a stratified 70/15/15 split, preserving approximately the 
-same class distribution across the three sets. The same feature standardisation procedure
-is applied to both models, with the mean and standard deviation calculated using only 
-the training nodes to prevent data leakage.
-
-PyTorch's random seed is also set to 42 before model initialisation and training. 
-Both models use the same training settings, including the learning rate, dropout rate 
-and maximum number of epochs. The model checkpoint with the lowest validation loss is 
-saved and used for final test evaluation.
-
-Although these measures improve reproducibility, small differences in results may 
-still occur across different hardware or software environments, particularly when 
-using GPU operations.
-
+A fixed random seed of 42 is used for dataset splitting, model initialisation and training 
+to improve reproducibility. Both models use identical data splits and training settings to 
+ensure a fair comparison. However, small differences in results may still occur across 
+different hardware or software environments, particularly when using GPU operations.
 
 ## Running Training and Inference
 ### Training the Models
@@ -231,7 +209,7 @@ All arguments are optional. The purpose of each argument is:
 --node:        Specifies the index of particular node to classify
 --num_samples: Specifies how many test nodes to display when --node is not provided
 --threshold:   Specifies confidence threshold between 0 and 1 where predictions below
-               this threshold are snet for manual review while equal and above are accepted
+               this threshold are sent for manual review while equal and above are accepted
 --checkpoint:  Specifies location of saved model weights if in another file
 ```
 If no arguments are provided, the script uses the trained GCN model and displays 
@@ -269,15 +247,9 @@ organisations, television shows and companies [2]. These categories were defined
 Facebook, and the objective of this project is to classify each page into one of 
 the four categories using its features and graph connections.
 
-The dataset is available through PyTorch Geometric and was originally provided in 
-a NumPy .npz file. The original data required conversion into the format expected 
-by the PyTorch Geometric FacebookPagePage loader. This involved extracting the 
-node features, edge connections and class labels, and saving them using the 
-appropriate array names.
-
 ## Node Features, Graph Connections and Class Labels
 Each Facebook page is represented by 128-dimensional node features extracted from
-descriptions written by the page owners to summarise the purpose of their pages. 
+descriptions written by the page owners to summarise the purpose of their pages [2]. 
 These features provide information about individual Facebook pages and are used 
 by both the MLP and GCN during classification.
 
@@ -300,8 +272,7 @@ The feature matrix has dimensions (22470, 128), the graph connections are stored
 edge_index tensor with dimensions (2, 342004), and the class labels have dimensions (22470).
 
 The MLP uses only the node features, while the GCN uses both the features and graph 
-connections. This allows the GCN to combine information from connected pages, potentially 
-improving classification when neighbouring pages belong to similar categories.
+connections.
 
 ## Dataset Statistics and Class Distribution
 An initial dataset audit was performed using dataset.py to verify the graph dimensions,
@@ -341,7 +312,7 @@ The graph density of approximately 0.001 indicates that relatively few connectio
 compared with the total number of possible connections. This indicates that the network 
 is sparse, with each page connected to relatively few other pages compared to the total
 number of pages. The transitivity of 0.232 indicates that some neighbouring pages form
-interconnected groups, which may provide useful information for graph-based classification.
+interconnected groups, which may provide useful information for the GCN classification.
 
 ## Training, Validation and Test Splits
 The dataset is divided into training, validation and testing sets using a 70/15/15 split.
@@ -395,28 +366,22 @@ The mean and standard deviation are calculated using only the training nodes and
 transformation is then applied to all nodes in the dataset. This is important because using 
 statistics calculated from the validation or test nodes could introduce and leak 
 information from these sets into preprocessing and affect the reliability of the 
-evaluation. To prevent division by zero, standard deviations smaller than 10^-8 are 
-replaced with 10^-8. The same standardised node features are used by both the MLP and 
-GCN to ensure a fair and consistent comparison.
+evaluation. The same standardised node features are used by both the MLP and 
+GCN to ensure a fair comparison.
 
 ## Data Leakage Prevention
 This project uses transductive semi-supervised node classification, where the GCN uses the 
 features and graph connections of all nodes, including validation and test nodes, but only 
-the training node labels are used to update the model parameters. During training, the 
-model produces predictions for all nodes in the graph, but the cross-entropy loss is 
-calculated only for nodes identified by train_mask. This prevents the validation and test 
-labels from directly influencing the model during training while still allowing the GCN to 
-learn from the graph structure.
+training labels are used to update model parameters. During training, predictions are 
+generated for all nodes, while the cross-entropy loss is calculated only for nodes 
+identified by train_mask. This allows the GCN to learn from the complete graph structure 
+without using validation or test labels during training.
 
-The validation labels are used to monitor model performance, select the checkpoint with the 
-lowest validation loss and establish a confidence threshold for manual review. The test 
-labels are reserved for final evaluation so that the model can be assessed using labels 
-that were not used for training or model selection. This is important because using test 
-labels during training or selecting model settings based on test performance could produce 
-overly optimistic results that do not accurately represent the model's ability to classify 
-unseen labels. The dataset splitting procedure also verifies that the training, validation 
-and test masks do not overlap and that every node belongs to exactly one set. Both the MLP 
-and GCN use the same splits, ensuring that their performance can be compared fairly.
+Validation labels are used to select the best model checkpoint and confidence threshold, 
+while test labels are reserved for final evaluation. This prevents test information from 
+influencing model selection, which could otherwise produce overly optimistic results. 
+Furthermore, the training, validation and test masks are verified to be non-overlapping, 
+and both models use identical splits to ensure a fair comparison.
 
 # Model Implementation and Training
 ## Multi-Layer Perceptron (MLP) Baseline
@@ -432,9 +397,9 @@ This is useful as it can help evaluate whether graph connections improve classif
 and confidence reliability.
 
 A fully connected layer in an MLP takes the input features and transforms them into a new 
-set of features using learnable weights and biases. Each neuron in the layer is connected to 
-every input feature, where the input values are multiplied by their corresponding weights 
-and added together with a bias to produce an output.
+set of features using learnable weights and biases. Each neuron in the layer is connected 
+to every input feature, where the input values are multiplied by their corresponding 
+weights and added together with a bias to produce an output.
 
 An activation function is then applied to the output of the layer to introduce nonlinearity, 
 allowing the model to learn more complex patterns in the data. For this project, the ReLU 
@@ -650,7 +615,7 @@ node.
 Although predictions are generated for all nodes, the training loss is only calculated using
 the 15,727 training nodes selected by train_mask.
 
-For the GCN, this follows transductive semi-supervised learning, where the features and 
+For the GCN, this means it does transductive semi-supervised learning, as the features and 
 graph connections of all nodes can be used during training, but validation and test labels 
 are excluded from the training loss.
 
@@ -682,7 +647,7 @@ The loss is smaller when the model assigns a high probability to the correct cla
 larger when it assigns a low probability.
 
 The script uses PyTorch's nn.CrossEntropyLoss(), which calculates the loss directly from the 
-logits using an internal log-softmax operation. Therefore, softmax does not need to be 
+logits using an internal log-softmax operation. Thus, softmax does not need to be 
 applied separately during training.
 
 ### Backpropagation
@@ -705,9 +670,9 @@ epoch, preventing unwanted gradient accumulation.
 
 ### Parameter Optimisation Using Adam
 The Adam optimiser uses the calculated gradients to update the model's weights and biases, 
-with the aim of reducing the cross-entropy loss over successive epochs.
+aiming to reduce the cross-entropy loss with every epoch.
 
-The basic principle of gradient descent can be represented by:
+Gradient descent can be represented by:
 ```math
 \theta_{t+1}=\theta_t-\eta\frac{\partial L}{\partial\theta_t}
 ```
@@ -746,7 +711,6 @@ or begins to overfit.
 Training and validation losses and accuracies are recorded after every epoch and used to 
 generate the corresponding graphs which show the model's performance.
 
-
 ### Training Epochs and Model Checkpointing
 Steps 2–6 are repeated for 1000 epochs, with each epoch performing one parameter update 
 using the entire set of 15,727 training nodes.
@@ -758,8 +722,8 @@ Training continues for all 1000 epochs without early stopping. However, the chec
 the lowest validation loss is selected rather than automatically using the parameters from 
 the final epoch.
 
-After training, the best checkpoint is loaded and used for the final test-set evaluation, 
-confidence analysis and other performance measurements.
+After training, the best checkpoint is loaded and used for the final test set evaluation 
+andother evaluations used in this report.
 
 ## Validation and Best Model Selection
 | Metric | MLP | GCN |
@@ -810,10 +774,10 @@ towards the later epochs, the increase is significantly smaller than that of the
 suggesting that the GCN experiences less severe overfitting.
 
 Overall, the GCN achieves a much lower training and validation loss than the MLP, 
-indicating that incorporating the graph connections improves the model's ability to learn 
+indicating that using the graph connections improves the model's ability to learn 
 useful patterns while also providing better generalisation to the validation nodes. This 
-also supports selecting the best model checkpoint based on validation loss rather than 
-using the final epoch.
+also shows why selecting the model with the lowest validation loss is good as it avoids 
+overfitting to the training set.
 
 ## Training and Validation Accuracy Curves
 ![MLP Accuracy Diagram](images/mlp_accuracy.jpg)
@@ -839,11 +803,10 @@ before stabilising at approximately 97% and 94%, respectively. The difference be
 training and validation accuracy remains relatively small compared to the MLP, indicating 
 that the GCN generalises better to the validation nodes.
 
-Overall, the GCN achieves significantly higher training and validation accuracy than the 
-MLP, suggesting that incorporating the graph connections allows the model to learn more 
-useful patterns for classifying Facebook pages. Although both models show a difference 
-between training and validation accuracy, the GCN maintains higher validation performance 
-with a smaller gap between the two curves.
+The GCN overall achieves significantly higher training and validation accuracy than the 
+MLP, suggesting that graph connections improve the models classification performance.
+Although both models show a difference between training and validation accuracy, the GCN 
+has higher validation performance with a smaller gap between the two curves.
 
 # Example Inputs, Outputs and Visualisations
 ## Example Input Graph and Node Features
@@ -879,12 +842,7 @@ and confidence values of the MLP and GCN are compared below.
 
 Examining these results, it is observed that the GCN correctly classifies all five selected 
 nodes, while the MLP incorrectly classifies node 0 as class 0 instead of class 3. The GCN 
-also generally produces higher prediction confidence, particularly for nodes 0 and 35.
-
-This suggests that incorporating information from neighbouring nodes can improve 
-classification compared to using only the individual node features. However, these five 
-examples alone are not sufficient to determine the overall effectiveness of the models, 
-which is evaluated using the complete test set.
+also generally produces higher prediction confidence, especially for nodes 0 and 35.
 
 ## Class Probabilities and Prediction Confidence
 The class probabilities of node 0 were examined to compare how the MLP and GCN classify the
@@ -976,27 +934,9 @@ that the GCN is more effective at distinguishing between the Facebook page categ
 
 Overall, the GCN produces fewer classification errors than the MLP, suggesting that 
 incorporating graph connections provides useful additional information for classification. 
-However, some confusion between the classes remains, which will be examined further in the 
-next sections.
+However, some confusion between the classes remains.
 
 # Investigation of the Open Research Dilemma
-## Research Question: Confidence and Ambiguity
-The main research question of this project is whether the GCN produces more reliable 
-confidence scores than the MLP when classifying Facebook pages, particularly when 
-predictions are incorrect or ambiguous.
-
-To investigate this, both models will first be compared based on their classification 
-performance to determine whether incorporating graph connections improves accuracy. Their 
-prediction confidence will then be examined using Expected Calibration Error (ECE), 
-confidence distributions and reliability diagrams to determine whether the confidence 
-scores accurately reflect the likelihood of correct classification.
-
-A confidence threshold will also be investigated to determine whether uncertain predictions 
-can be sent for manual review while maintaining high accuracy for automatically accepted 
-predictions. Finally, the computational costs and confidently incorrect predictions will be 
-examined to determine whether the additional complexity of the GCN is justified by its 
-performance.
-
 ## Quantitative Classification Benchmarking
 ### Experimental Setup and Fair Test Comparison
 To compare the classification performance of the MLP and GCN, both models were evaluated 
@@ -1020,7 +960,7 @@ The overall test accuracy and macro-F1 results for both models are given below:
 
 Accuracy represents the proportion of test nodes correctly classified by the model. 
 Macro-F1 is the average F1 score across all four classes, where F1 combines precision and 
-recall into a single measure. Unlike accuracy, macro-F1 gives equal importance to each 
+recall into a single value. Unlike accuracy, macro-F1 gives equal importance to each 
 class regardless of how many nodes belong to it, making it useful when the dataset contains 
 class imbalance.
 
@@ -1030,8 +970,8 @@ achieves a significantly higher macro-F1 score of 0.9292 compared to 0.7875 for 
 
 This indicates that the GCN is more effective at correctly classifying the Facebook pages 
 while also maintaining better performance across the individual classes. The higher 
-macro-F1 score is particularly important because it suggests that the improvement is not 
-simply caused by performing well on the classes containing the most nodes.
+macro-F1 score shows that the improvement is not just because of performing well on the 
+classes containing the most nodes.
 
 ### Per-Class Precision and Recall
 To examine how effectively each model classifies the four Facebook page categories, the 
@@ -1059,14 +999,10 @@ achieves an F1 score of 0.6739 compared to 0.9009 for the GCN. In particular, th
 increases from 0.6180 to 0.8820, meaning that the GCN correctly identifies a significantly 
 larger proportion of the politicians in the test set.
 
-This is particularly important because Class 3 contains the least number of nodes in the 
-dataset, and so it may be more difficult for the models to classify accurately. The results 
-suggest that using graph connections provides useful additional information for 
-identifying nodes belonging to this class.
-
-Although the GCN performs significantly better across all four classes, Class 3 still has 
-the lowest recall of 0.8820, indicating that some difficulty in identifying politicians 
-remains.
+This is important as Class 3 contains the least number of nodes in the dataset, and so it 
+may be more difficult for the models to classify correctly. Although the GCN performs 
+better across all four classes, Class 3 still has the lowest recall of 0.8820, 
+indicating that there is still some classification difficulty.
 
 ### Multiclass AUROC Comparison
 The Area Under the Receiver Operating Characteristic Curve (AUROC) was also calculated to 
@@ -1088,27 +1024,9 @@ Examining the results, it is observed that both models achieve relatively high m
 scores, with the GCN achieving the highest score of 0.9880 compared to 0.9482 for the MLP.
 
 This indicates that both models are effective at distinguishing between the four Facebook 
-page categories based on their predicted probabilities, however the GCN is significantly 
+page categories based on their predicted probabilities, however the GCN is much 
 more effective. The higher AUROC score also supports the improvements observed in accuracy 
 and macro-F1.
-
-### Classification Performance Discussion
-Overall, the quantitative classification results show that the GCN outperforms the MLP 
-across all the evaluated metrics. The GCN achieves higher test accuracy, macro-F1, 
-per-class precision and recall, and multiclass AUROC, suggesting that using graph 
-connections improves classification performance compared to using only the individual node 
-features.
-
-The improvements are particularly noticeable for Class 3 (Politicians), which the MLP has 
-the most difficulty classifying. This suggests that the additional information provided by 
-neighbouring nodes is useful for distinguishing between the Facebook page categories, 
-particularly for classes which are more difficult to identify.
-
-Based on these results, the GCN is the more effective model for classification. However, 
-higher classification accuracy does not necessarily mean that the model produces more 
-reliable confidence scores. Therefore, the confidence reliability and calibration of both 
-models must also be examined to determine whether the GCN can be trusted when automatically 
-classifying Facebook pages.
 
 ## Confidence Reliability and Calibration
 ### Confidence on Correct and Incorrect Predictions
@@ -1251,30 +1169,6 @@ Overall, the reliability diagrams support the ECE results, indicating that the G
 better calibrated confidence scores than the MLP. However, neither model is perfectly 
 calibrated, and both can still produce confident incorrect predictions.
 
-### Overconfidence and Ambiguous Predictions
-Although the GCN achieves better classification performance and a lower ECE, this does not 
-mean that it avoids overconfidence on individual predictions.
-
-As demonstrated earlier, node 16052 belongs to Class 1 (Governmental Organisations), but 
-both models incorrectly classify it as Class 2 (Companies). The MLP produces a confidence 
-of 91.20%, while the GCN produces a confidence of approximately 100%, despite both 
-predictions being incorrect.
-
-This is important because the GCN is more confident in the incorrect 
-classification than the MLP, even though it achieves better overall accuracy and 
-calibration across the test set.
-
-The overlapping confidence distributions in Figures 10 and 11 also indicate that incorrect 
-predictions are not always associated with low confidence. While some incorrect 
-classifications may occur because the model is uncertain between multiple classes, others 
-are made with very high confidence.
-
-These results demonstrate that although the GCN produces more reliable confidence scores 
-overall, it can still be overconfident on individual incorrect predictions. Therefore, a 
-confidence threshold will be investigated to determine whether uncertain predictions can be 
-identified for manual review, while reducing the number of classifications that need to be 
-checked manually.
-
 ## Confidence Threshold and Manual Review
 ### Confidence Threshold Selection
 To reduce the risk of automatically accepting incorrect classifications, a confidence 
@@ -1340,8 +1234,8 @@ the accepted prediction accuracy does not reach the original target of 95% on th
 despite achieving 95.02% on the validation set.
 
 This indicates that the threshold selected using the validation set does not perfectly 
-generalise to the test set. The difference is relatively small, but it demonstrates that 
-achieving a target accuracy on validation data does not guarantee that the same accuracy 
+generalise to the test set. The difference is relatively small, but it shows that 
+a target accuracy on validation data does not guarantee that the same accuracy 
 will be achieved on unseen test data.
 
 Examining the MLP, it is seen that it achieves a slightly higher accepted test prediction 
@@ -1426,48 +1320,294 @@ performance but also the practicality of using confidence thresholds to reduce m
 classification workload. However, the highly confident incorrect predictions 
 demonstrate that further investigation of individual failure cases is still important.
 
-## Computational Resource Profiling
+## Computational Resource Usage Comparison
+To investigate whether the additional computational cost of the GCN is justified by its 
+classification performance, both models were evaluated based on their number of trainable 
+parameters, inference time and GPU memory usage.
+
+Although the GCN achieves higher classification accuracy and better confidence calibration, 
+it is important to determine whether more computational resources are required for these 
+improvements compared to the simpler MLP baseline. This is especially important for 
+applications where large numbers of Facebook pages must be classified efficiently.
+
 ### Model Parameter Count
+Both the MLP and GCN contain 4,260 trainable parameters, as they use the same input, hidden 
+and output dimensions. However, the GCN requires additional computation because it combines 
+information from neighbouring nodes, while the MLP only considers the individual node 
+features.
 
 ### Inference Runtime and Latency
 
+The CPU and GPU inference times measured for both models are given below:
+
+| Metric | MLP | GCN |
+|---|---:|---:|
+| Average Inference Time (CPU) | 1.499 ms | 36.090 ms |
+| Average Inference Time (GPU) | 0.225 ms | 1.789 ms |
+
+Examining the CPU results, it is observed that the MLP completes inference in 1.499 ms 
+compared to 36.090 ms for the GCN, making the GCN approximately 24 times slower. This is 
+expected as the GCN uses neighbouring node information, while the MLP only 
+performs fully connected operations, meaning calculation is slower.
+
+Examining the GPU results, the MLP achieves an inference time of 0.225 ms compared to 1.789 
+ms for the GCN. Although the GCN remains approximately 8 times slower than the MLP, both 
+models perform inference significantly faster on the GPU than on the CPU.
+
+This indicates that GPU acceleration is useful for the GCN because its graph 
+convolution operations require more computation. Despite this additional cost, both models 
+remain well below the inference time target of five seconds.
+
 ### Peak GPU Memory Usage
 
+Peak GPU memory was measured using PyTorch's `torch.cuda.max_memory_allocated()` function, 
+which records the maximum GPU memory allocated by PyTorch. Separate measurements were taken 
+during training and inference on the Rangpur computing cluster.
+
+The results are given below:
+
+| Metric | MLP | GCN |
+|---|---:|---:|
+| Peak Training GPU Memory | 42.33 MiB | 134.07 MiB |
+| Peak Inference GPU Memory | 38.63 MiB | 134.47 MiB |
+
+Examining the training results, it is observed that the GCN uses 134.07 MiB compared to 42.
+33 MiB for the MLP, requiring approximately 3.17 times more GPU memory. This is expected as 
+the GCN must process graph connections and store intermediate representations during 
+backpropagation, while the MLP only processes individual node features.
+
+Examining the inference results, the GCN also requires more memory, using 134.47 MiB 
+compared to 38.63 MiB for the MLP. This means that the GCN requires approximately 3.48 
+times more GPU memory during inference.
+
+It is also observed that the GCN's peak inference memory is slightly higher than its peak 
+training memory. This difference is relatively small and may be caused by differences in 
+the operations performed and tensors retained during the two measurements.
+
+Overall, both models remain well below the proposed 2 GB GPU memory target during training 
+and inference, indicating that the additional memory requirements of the GCN are acceptable 
+for this dataset.
+
 ### Computational Efficiency Comparison
+The overall computational resource measurements are summarised below:
+
 | Metric | MLP | GCN |
 |---|---:|---:|
 | Model Parameters | 4,260 | 4,260 |
 | Average Inference Time (CPU) | 1.499 ms | 36.090 ms |
-| Peak GPU Memory | Not measured | Not measured |
+| Average Inference Time (GPU) | 0.225 ms | 1.789 ms |
+| Peak Training GPU Memory | 42.33 MiB | 134.07 MiB |
+| Peak Inference GPU Memory | 38.63 MiB | 134.47 MiB |
 
+Overall, the MLP is more computationally efficient than the GCN, achieving faster inference 
+and lower GPU memory usage while containing the same number of trainable parameters.
+
+However, the GCN achieves significantly higher classification accuracy and macro-F1, 
+suggesting that its additional computational cost provides a meaningful improvement in 
+classification performance.
+
+Furthermore, both models satisfy the proposed inference-time and GPU memory targets. 
+Therefore, the additional computational requirements of the GCN are acceptable for this 
+dataset and do not prevent it from being a practical solution for classifying Facebook 
+pages.
 
 ## Qualitative Failure Analysis
 ### Failure Case Selection Method
-| Model | Node ID | Actual Class | Predicted Class | Confidence |
-|---|---:|---:|---:|---:|
-| MLP | 2924 | 0 | 1 | 99.99% |
-| MLP | 12241 | 3 | 2 | 99.99% |
-| MLP | 5047 | 3 | 0 | 99.87% |
-| MLP | 17334 | 0 | 3 | 99.82% |
-| MLP | 10198 | 1 | 2 | 99.80% |
-| GCN | 16052 | 1 | 2 | 100.00% |
-| GCN | 9254 | 0 | 3 | 100.00% |
-| GCN | 9708 | 3 | 0 | 100.00% |
-| GCN | 20212 | 0 | 3 | 100.00% |
-| GCN | 6163 | 1 | 2 | 100.00% |
+To investigate why the MLP and GCN incorrectly classify certain Facebook pages, five 
+cases were selected from the test set which all have high-confidence errors. 
+For each case, both model predictions were compared alongside the class distribution of 
+direct and two-hop neighbours of that node and the mean cosine similarity between the node 
+and its direct neighbours to see what causes such high confidence incorrect predictions.
 
+The selected cases are given below:
 
-### Failure Case 1
+| Node ID | Actual Class | MLP Prediction | MLP Confidence | GCN Prediction | GCN Confidence | Mean Cosine Similarity |
+|---|---|---|---:|---|---:|---:|
+| 16052 | 1 | 2 (Incorrect) | 91.20% | 2 (Incorrect) | 100.00% | 0.3768 |
+| 9254 | 0 | 3 (Incorrect) | 99.22% | 3 (Incorrect) | 100.00% | 0.0594 |
+| 9708 | 3 | 0 (Incorrect) | 99.74% | 0 (Incorrect) | 100.00% | 0.2417 |
+| 2924 | 0 | 1 (Incorrect) | 99.99% | 0 (Correct) | 86.43% | 0.0548 |
+| 12241 | 3 | 2 (Incorrect) | 99.99% | 2 (Incorrect) | 65.74% | 0.0833 |
 
-### Failure Case 2
+Examining the results, both models incorrectly classify four of the five nodes, while the 
+GCN corrects the MLP's prediction for node 2924. It is also observed that the GCN produces 
+approximately 100% confidence for three incorrect predictions, demonstrating that high 
+confidence does not always indicate correctness.
 
-### Failure Case 3
+### Failure Case 1: Node 16052
+Node 16052 belongs to Class 1 (Governmental Organisations), however both models incorrectly 
+classify it as Class 2 (Companies). The MLP produces 91.20% confidence, while the GCN 
+produces approximately 100%.
 
-### Failure Case 4
+The neighbourhood class distribution is given by:
 
-### Failure Case 5
+| Class | Direct Neighbours | Two-Hop Neighbours |
+|---|---:|---:|
+| Class 0 | 0 (0.00%) | 31 (9.09%) |
+| Class 1 | 1 (0.38%) | 129 (37.83%) |
+| Class 2 | 265 (99.62%) | 169 (49.56%) |
+| Class 3 | 0 (0.00%) | 12 (3.52%) |
+| **Total** | **266** | **341** |
+
+Examining the results, 265 of the 266 direct neighbours of the node belong to companies 
+(99.62%), while companies also represent the largest proportion of two-hop neighbours 
+(49.56%). This suggests that the surrounding graph connections may contribute to the GCN's 
+incorrect prediction.
+
+The mean cosine similarity to direct neighbours is 0.3768, indicating some positive 
+similarity between their features. However, the MLP also incorrectly classifies the node 
+without using graph connections, suggesting that the node's own features may favour 
+companies. Overall, both the node features and misleading graph connections may contribute 
+to this error.
+
+### Failure Case 2: Node 9254
+Node 9254 belongs to Class 0 (Television Shows), however both models incorrectly classify 
+it as Class 3 (Politicians). The MLP produces 99.22% confidence, while the GCN produces 
+approximately 100%.
+
+The neighbourhood class distribution is given below:
+
+| Class | Direct Neighbours | Two-Hop Neighbours |
+|---|---:|---:|
+| Class 0 | 1 (6.25%) | 35 (19.23%) |
+| Class 1 | 0 (0.00%) | 7 (3.85%) |
+| Class 2 | 0 (0.00%) | 17 (9.34%) |
+| Class 3 | 15 (93.75%) | 123 (67.58%) |
+| **Total** | **16** | **182** |
+
+Examining the results, politicians account for 93.75% of direct neighbours and 67.58% of 
+two-hop neighbours. This suggests that the surrounding graph structure may influence the 
+GCN towards the incorrect category.
+
+The mean cosine similarity to direct neighbours is only 0.0594, indicating very little 
+average similarity between their features. Despite this, both models produce extremely 
+confident incorrect predictions. This suggests that the node features and misleading graph 
+connections may both contribute to the error, demonstrating that the GCN can remain highly 
+confident even when incorrect.
+
+### Failure Case 3: Node 9708
+Node 9708 belongs to Class 3 (Politicians), however both models incorrectly classify it as 
+Class 0 (Television Shows). The MLP produces 99.74% confidence, while the GCN produces 
+approximately 100%.
+
+The neighbourhood class distribution is given below:
+
+| Class | Direct Neighbours | Two-Hop Neighbours |
+|---|---:|---:|
+| Class 0 | 1 (100.00%) | 3 (100.00%) |
+| Class 1 | 0 (0.00%) | 0 (0.00%) |
+| Class 2 | 0 (0.00%) | 0 (0.00%) |
+| Class 3 | 0 (0.00%) | 0 (0.00%) |
+| **Total** | **1** | **3** |
+
+Examining the results, node 9708 has only one direct neighbour and three two-hop 
+neighbours, all belonging to television shows. This means that the GCN has very little 
+neighbouring information available, with all surrounding nodes belonging to the incorrect 
+class.
+
+The mean cosine similarity to its direct neighbour is 0.2417, indicating some positive 
+feature similarity. The MLP also incorrectly classifies the node with high confidence, 
+suggesting that its own features may contribute to the error.
+
+Unlike node 9254, which has 16 direct neighbours, node 9708 has only one. This demonstrates 
+that misleading graph information may contribute to incorrect classifications regardless of 
+whether the neighbourhood contains many or very few connections.
+
+### Failure Case 4: Node 2924
+Node 2924 belongs to Class 0 (Television Shows). The MLP incorrectly classifies it as Class 
+1 (Governmental Organisations) with 99.99% confidence, while the GCN correctly predicts 
+Class 0 with 86.43% confidence.
+
+The neighbourhood class distribution is given below:
+
+| Class | Direct Neighbours | Two-Hop Neighbours |
+|---|---:|---:|
+| Class 0 | 5 (71.43%) | 33 (10.34%) |
+| Class 1 | 2 (28.57%) | 281 (88.09%) |
+| Class 2 | 0 (0.00%) | 4 (1.25%) |
+| Class 3 | 0 (0.00%) | 1 (0.31%) |
+| **Total** | **7** | **319** |
+
+Examining the results, five of the seven direct neighbours belong to television shows 
+(71.43%), providing information which may support the GCN's correct prediction. However, 
+88.09% of two-hop neighbours belong to governmental organisations, indicating that much 
+of the surrounding graph is associated with the incorrect class.
+
+The mean cosine similarity to direct neighbours is only 0.0548, indicating low average 
+feature similarity. Despite this and the misleading two-hop neighbourhood, the GCN 
+correctly classifies the node.
+
+This demonstrates that the GCN does not simply predict the most common neighbouring class, 
+but combines node features with learned information from graph connections. Overall, this 
+case demonstrates how graph information can help correct a highly confident MLP error.
+
+### Failure Case 5: Node 12241
+Node 12241 belongs to Class 3 (Politicians), however both models incorrectly classify it as 
+Class 2 (Companies). The MLP produces 99.99% confidence, while the GCN produces 65.74%.
+
+The neighbourhood class distribution is given below:
+
+| Class | Direct Neighbours | Two-Hop Neighbours |
+|---|---:|---:|
+| Class 0 | 0 (0.00%) | 8 (1.62%) |
+| Class 1 | 1 (10.00%) | 50 (10.14%) |
+| Class 2 | 5 (50.00%) | 372 (75.46%) |
+| Class 3 | 4 (40.00%) | 63 (12.78%) |
+| **Total** | **10** | **493** |
+
+Examining the results, 50% of direct neighbours belong to companies while 40% belong to 
+politicians. However, companies dominate the two-hop neighbourhood at 75.46%, which may 
+contribute to the GCN's incorrect prediction. The mean cosine similarity to direct 
+neighbours is also low at 0.0833.
+
+The class probabilities produced by both models are given below:
+
+| Class | MLP Probability | GCN Probability |
+|---|---:|---:|
+| Class 0 | 0.00% | 0.76% |
+| Class 1 | 0.00% | 11.24% |
+| Class 2 | 99.99% | 65.74% |
+| Class 3 | 0.01% | 22.25% |
+
+Examining these probabilities, the GCN reduces the incorrect company probability from 
+99.99% to 65.74% and increases the correct politician probability from 0.01% to 22.25%. 
+This suggests that neighbouring information may provide some evidence supporting the 
+correct class, although it is insufficient to correct the prediction.
+
+However, the GCN's confidence of 65.74% remains above the selected manual-review threshold 
+of 0.56, meaning this incorrect prediction would still be automatically accepted. Overall, 
+this case demonstrates that reducing confidence in an incorrect prediction does not 
+guarantee that the manual-review system will identify it.
 
 ### Common Failure Modes and Root Causes
+
+The five cases demonstrate several possible causes of incorrect classification, summarised 
+below:
+
+| Node ID | Possible Failure Mode | Supporting Evidence |
+|---|---|---|
+| 16052 | Misleading graph connections | 99.62% of direct neighbours are companies |
+| 9254 | Incorrect class dominates neighbourhood | 93.75% of direct neighbours are politicians |
+| 9708 | Limited and misleading neighbourhood information | Only one direct neighbour, belonging to the incorrect class |
+| 2924 | MLP error corrected by GCN | 71.43% of direct neighbours belong to the correct class |
+| 12241 | Mixed neighbourhood and remaining uncertainty | 50% of direct neighbours are companies and 40% are politicians |
+
+Examining these cases, it is observed that misleading graph connections may contribute to 
+incorrect GCN predictions, particularly when most neighbours belong to the wrong class. 
+Limited neighbourhood information may also be problematic, as demonstrated by node 9708.
+
+However, node 2924 demonstrates that incorporating graph connections can also correct 
+highly confident MLP errors. Furthermore, node 12241 shows that although graph information 
+can reduce confidence in an incorrect prediction, it may still remain above the 
+manual-review threshold.
+
+It should be noted that these neighbourhood distributions suggest possible failure causes 
+rather than proving them, as the models use node features and graph connections rather than 
+neighbouring class labels when making predictions.
+
+Overall, the results demonstrate that the GCN improves classification performance but 
+remains vulnerable to misleading graph connections and highly confident incorrect 
+predictions, highlighting limitations of confidence-based manual review.
 
 ## Engineering Recommendation and Trade-offs
 ### Classification Accuracy versus Confidence Reliability
@@ -1486,11 +1626,45 @@ demonstrate that further investigation of individual failure cases is still impo
 ## Limitations and Future Improvements
 
 # Artificial Intelligence Usage Disclosure
-## AI Tools Used
+Artificial intelligence was used for the development of this report and also for coding the
+models, dataset loading and training procedures. The AI tool used was ChatGPT which was used
+for the following tasks:
+- Debugging code
+- Teaching me how to use the libraries for developing the MLP and GCN models, and also giving
+me the code for these models.
+- Teaching me the key mathematical concepts required for each model and giving the equations
+I could use in the report
+- Helping to fix incorrect dataset formatting from downloaded link by giving conversion file
+so data can be used by PyTorch Geometric
+- Generating images of the MLP and GCN model structures which were decided to be used for 
+this report
+- Generating titles for sections of the report
+- Spelling checks and fixing gramatical errors
+- Documenting code and checking over documentation spelling
+- Reducing word count on report
+- Generating markdown tables based on the exprerimental results I've generated from training
+both models separately.
+- Teaching me every old and new concept in this report which I was not too familiar with 
+such as the ECE, t-SNE, precision, recall, F1, AUROC, calibration, how the ADAM optimiser 
+worked and also what to look for when analysing such information.
+- The train.py, predict.py, modules.py, dataset.py, inspect_node.py and convert_dataset.py
+have all used AI in some stage of their development to check for debugging, code syntax, 
+generate required code functionalities, and documentation. All code files have been checked 
+that they are correct and complete the task correctly.
 
-## How AI Was Used
+The way I would verify and test the AI generated code was I would first look though each 
+line and use the prompt:
 
-## Verification and Independent Work
+"For this code: (code) explain every line and what its purpose is."
+
+Secondly I would test and train the models repeatedly and check that every required statistic
+and plot is used and printed. Then I would look over all the statistic and check whether they
+realistically match up to what is expected for that metric. For the plots aswell I would 
+compare them to ones found online for similar models to ensure they correctly represent
+the data. Mathematical concepts were also checked online to verify they are correct.
+
+Any incorrect code, explanation, or functionality resulting from halluciations were 
+identified and removed. 
 
 
 # Feasability Review (Checked off on 6/10/2026)
@@ -1544,19 +1718,3 @@ adjusted. If it offers little improvement, the MLP will remain the simpler fallb
 [2] Stanford Network Analysis Project (SNAP), “Facebook Large Page-Page Network,” Stanford University. [Online]. Available: https://snap.stanford.edu/data/facebook-large-page-page-network.html
 
 [3] PyTorch Geometric, “torch_geometric.datasets.FacebookPagePage,” PyTorch Geometric Documentation, Version 2.6.0. [Online]. Available: https://pytorch-geometric.readthedocs.io/en/2.6.0/generated/torch_geometric.datasets.FacebookPagePage.html
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

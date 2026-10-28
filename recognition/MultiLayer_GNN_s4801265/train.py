@@ -716,9 +716,9 @@ def measure_resources(model, data, device):
             torch.cuda.max_memory_allocated(device) / (1024 ** 2)
         )
 
-        print(f"Peak GPU Memory: {peak_memory:.2f} MiB")
+        print(f"Peak Inference GPU Memory: {peak_memory:.2f} MiB")
     else:
-        print("Peak GPU Memory: N/A (CPU execution)")
+        print("Peak Inference GPU Memory: N/A (CPU execution)")
 
 
 def analyse_failures(model, data, num_examples=5):
@@ -835,6 +835,10 @@ def main():
 
     print(f"{model_name.upper()} initialised successfully.")
 
+    # Reset peak GPU memory before training
+    if device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(device)
+
     best_val_loss = float("inf")
     best_epoch = 0
     best_model_path = f"{model_name}_best.pt"
@@ -889,6 +893,21 @@ def main():
             f"Val Loss: {val_loss:.4f} | "
             f"Val Accuracy: {val_accuracy:.4f}"
         )
+
+    # Measure peak GPU memory during training
+    if device.type == "cuda":
+        torch.cuda.synchronize(device)
+
+        peak_training_memory = (
+            torch.cuda.max_memory_allocated(device) / (1024 ** 2)
+        )
+
+        print(
+            f"\nPeak Training GPU Memory: "
+            f"{peak_training_memory:.2f} MiB"
+        )
+    else:
+        print("\nPeak Training GPU Memory: N/A (CPU execution)")
 
     # Load the best model after training
     model.load_state_dict(
