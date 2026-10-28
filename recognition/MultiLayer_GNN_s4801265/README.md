@@ -1451,14 +1451,14 @@ The neighbourhood class distribution is given by:
 
 Examining the results, 265 of the 266 direct neighbours of the node belong to companies 
 (99.62%), while companies also represent the largest proportion of two-hop neighbours 
-(49.56%). This suggests that the surrounding graph connections may contribute to the GCN's 
+(49.56%). This demonstrates that large connections to class 2 contribute to the GCN's 
 incorrect prediction.
 
 The mean cosine similarity to direct neighbours is 0.3768, indicating some positive 
 similarity between their features. However, the MLP also incorrectly classifies the node 
-without using graph connections, suggesting that the node's own features may favour 
-companies. Overall, both the node features and misleading graph connections may contribute 
-to this error.
+without using graph connections, suggesting that an overlap in the node's features to 
+features seen in class 2 nodes may contribute to the misclassification. Overall, both the 
+similar node features and misleading graph connections may contribute to this error.
 
 ### Failure Case 2: Node 9254
 Node 9254 belongs to Class 0 (Television Shows), however both models incorrectly classify 
@@ -1481,9 +1481,9 @@ GCN towards the incorrect category.
 
 The mean cosine similarity to direct neighbours is only 0.0594, indicating very little 
 average similarity between their features. Despite this, both models produce extremely 
-confident incorrect predictions. This suggests that the node features and misleading graph 
-connections may both contribute to the error, demonstrating that the GCN can remain highly 
-confident even when incorrect.
+confident incorrect predictions. This suggests that overlapping node features could be a 
+potential cause, and combined with misleading graph connections may both contribute to the 
+error.
 
 ### Failure Case 3: Node 9708
 Node 9708 belongs to Class 3 (Politicians), however both models incorrectly classify it as 
@@ -1535,11 +1535,15 @@ of the surrounding graph is associated with the incorrect class.
 
 The mean cosine similarity to direct neighbours is only 0.0548, indicating low average 
 feature similarity. Despite this and the misleading two-hop neighbourhood, the GCN 
-correctly classifies the node.
+correctly classifies the node, most likely due to the cosine similarity being really low, 
+but also the influence of the majority correct class direct neighbours. Despite correct 
+prediction it is seen that the GCN has lower confidence and so the two hop 
+neighbourhood does reduce this confidence in its prediction.
 
-This demonstrates that the GCN does not simply predict the most common neighbouring class, 
-but combines node features with learned information from graph connections. Overall, this 
-case demonstrates how graph information can help correct a highly confident MLP error.
+This demonstrates that the GCN does not simply predict the most common neighbouring class in
+its two-hop nieghbourhood, but combines node features with learned information from graph 
+connections. Overall, this case demonstrates how graph information can help correct a highly 
+confident MLP error.
 
 ### Failure Case 5: Node 12241
 Node 12241 belongs to Class 3 (Politicians), however both models incorrectly classify it as 
@@ -1580,50 +1584,77 @@ this case demonstrates that reducing confidence in an incorrect prediction does 
 guarantee that the manual-review system will identify it.
 
 ### Common Failure Modes and Root Causes
+Examining the five cases, it is observed that misleading graph connections and limited 
+neighbourhood information may contribute to incorrect GCN predictions. However, the results 
+also demonstrate that incorporating graph information can correct highly confident MLP 
+errors, as seen for node 2924.
 
-The five cases demonstrate several possible causes of incorrect classification, summarised 
-below:
+Another important observation is that both models can produce highly confident incorrect 
+predictions. Even when the GCN reduces confidence in an incorrect prediction, as seen for 
+node 12241, it may still remain above the manual-review threshold and be automatically 
+accepted.
 
-| Node ID | Possible Failure Mode | Supporting Evidence |
-|---|---|---|
-| 16052 | Misleading graph connections | 99.62% of direct neighbours are companies |
-| 9254 | Incorrect class dominates neighbourhood | 93.75% of direct neighbours are politicians |
-| 9708 | Limited and misleading neighbourhood information | Only one direct neighbour, belonging to the incorrect class |
-| 2924 | MLP error corrected by GCN | 71.43% of direct neighbours belong to the correct class |
-| 12241 | Mixed neighbourhood and remaining uncertainty | 50% of direct neighbours are companies and 40% are politicians |
-
-Examining these cases, it is observed that misleading graph connections may contribute to 
-incorrect GCN predictions, particularly when most neighbours belong to the wrong class. 
-Limited neighbourhood information may also be problematic, as demonstrated by node 9708.
-
-However, node 2924 demonstrates that incorporating graph connections can also correct 
-highly confident MLP errors. Furthermore, node 12241 shows that although graph information 
-can reduce confidence in an incorrect prediction, it may still remain above the 
-manual-review threshold.
-
-It should be noted that these neighbourhood distributions suggest possible failure causes 
-rather than proving them, as the models use node features and graph connections rather than 
-neighbouring class labels when making predictions.
-
-Overall, the results demonstrate that the GCN improves classification performance but 
-remains vulnerable to misleading graph connections and highly confident incorrect 
-predictions, highlighting limitations of confidence-based manual review.
+Overall, these results demonstrate that although the GCN improves classification 
+performance, it remains vulnerable to misleading graph information and overconfident 
+predictions. The neighbourhood analysis suggests possible causes, however even without the 
+influence of connected nodes, the MLP still has high confidence so feature overlap with other
+classes could be a reason for both the MLP and GCN having high confidence incorrect 
+predictions.
 
 ## Engineering Recommendation and Trade-offs
 ### Classification Accuracy versus Confidence Reliability
+Examining the results, it is observed that the GCN achieves higher classification accuracy 
+and better confidence calibration than the MLP. However, both models still produce highly 
+confident incorrect predictions, meaning that a lower ECE does not guarantee that every 
+prediction is reliable. Therefore, confidence thresholds are useful for identifying 
+uncertain predictions, but cannot eliminate all classification errors.
 
 ### Performance versus Computational Cost
+The GCN requires more computational resources than the MLP, particularly during inference, 
+due to the additional graph convolution operations. However, both models remain well below 
+the proposed GPU memory and inference-time targets. This indicates that the improved 
+classification performance of the GCN justifies its additional computational requirements 
+for this dataset.
 
 ### MLP versus GCN: Recommended Model
+Based on the experimental results, the GCN is recommended over the MLP for classifying 
+Facebook pages. The GCN achieves higher accuracy, macro-F1 and better confidence 
+calibration, while also requiring fewer predictions to be sent for manual review. Although 
+the MLP is more computationally efficient, the improvements achieved by the GCN make it the 
+more suitable model for this application.
 
 ### Deployment Recommendations and Limitations
+For practical use, the GCN should be combined with the proposed confidence-based 
+manual-review system, where predictions below the selected threshold of 0.56 are sent for 
+review. However, some incorrect predictions may still be automatically accepted with high 
+confidence, meaning the system should not be relied upon without additional monitoring. 
+Further improvements to confidence calibration and threshold selection may help reduce these 
+errors, but also considering the reliability of the dataset and investigating graph 
+connections.
 
 # Conclusion
 ## Summary of Findings
+This project investigated whether a two-layer GCN could improve classification performance 
+and confidence reliability compared to an MLP baseline when classifying Facebook pages. The 
+results demonstrate that the GCN achieves higher accuracy, macro-F1 and better confidence 
+calibration by incorporating information from neighbouring nodes. However, the qualitative 
+failure analysis also demonstrates that misleading graph connections can contribute to 
+highly confident incorrect predictions.
 
 ## Acceptance Criteria Evaluation
+Overall, the project successfully evaluated all five acceptance criteria in the feasibility 
+review. The GCN outperformed the MLP in classification performance and confidence 
+calibration, while the manual-review system was successfully implemented and evaluated. Both 
+models satisfied the proposed computational resource limits, and five representative failure 
+cases were investigated.
 
 ## Limitations and Future Improvements
+The main limitations of the GCN are its dependence on graph connections and its ability to 
+produce highly confident incorrect predictions. As demonstrated by the failure analysis, 
+misleading or limited neighbouring information may contribute to classification errors that 
+are not identified by the manual-review threshold. Future improvements could investigate 
+alternative confidence calibration methods, different threshold selection strategies and 
+more advanced GNN architectures to determine whether these limitations can be reduced.
 
 # Artificial Intelligence Usage Disclosure
 Artificial intelligence was used for the development of this report and also for coding the
